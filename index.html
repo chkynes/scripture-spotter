@@ -1,0 +1,2038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Scripture Spotter">
+<meta name="theme-color" content="#f6f5f1">
+<title>Scripture Spotter</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#x1F4D6;</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:wght@700&display=swap" rel="stylesheet">
+<script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script crossorigin src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<style>
+:root {
+  --bg: #f6f5f1; --card: #ffffff; --card-border: #e0ddd7; --card-hover: #f0ede8;
+  --accent: #8b9a7e; --accent-hover: #7a8a6d; --blue: #6b8f9a; --blue-hover: #5a7e89;
+  --green: #6b8f5e; --red: #c45c5c; --text: #2f2e2e; --muted: #626262; --dim: #9a9a94;
+  --radius: 12px; --safe-top: env(safe-area-inset-top, 0px);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; min-height:100dvh; overscroll-behavior:none; }
+#root { min-height:100vh; min-height:100dvh; display:flex; flex-direction:column; }
+button { font-family:inherit; cursor:pointer; border:none; outline:none; -webkit-appearance:none; }
+.screen { flex:1; display:flex; flex-direction:column; padding:16px; padding-top:calc(var(--safe-top) + 16px); max-width:500px; width:100%; margin:0 auto; }
+.screen-scroll { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; }
+
+/* Header */
+.header { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; }
+.header h1 { font-size:20px; font-weight:700; }
+.header-btn { background:var(--card); color:var(--muted); width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.back-btn { background:none; color:var(--muted); font-size:14px; display:flex; align-items:center; gap:4px; margin-bottom:12px; padding:8px 0; }
+
+/* Cards */
+.card { background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:20px; margin-bottom:12px; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+
+/* Passage display */
+.passage-card { background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:20px; margin-bottom:16px; max-height:45vh; overflow-y:auto; -webkit-overflow-scrolling:touch; box-shadow:0 2px 8px rgba(0,0,0,0.06); }
+.passage-text { font-family:Georgia,'Times New Roman',serif; font-size:17px; line-height:1.7; color:#2f2e2e; }
+.passage-text .verse-num { font-family:-apple-system,sans-serif; font-size:11px; color:var(--accent); vertical-align:super; margin-right:2px; font-weight:600; }
+
+/* Buttons */
+.btn { display:block; width:100%; padding:16px; border-radius:var(--radius); font-size:16px; font-weight:600; text-align:center; transition:all .15s; }
+.btn-primary { background:var(--accent); color:#ffffff; }
+.btn-primary:active { background:var(--accent-hover); transform:scale(0.98); }
+.btn-primary:disabled { opacity:0.4; transform:none; }
+.btn-secondary { background:var(--card); color:var(--text); border:1px solid var(--card-border); }
+.btn-secondary:active { background:var(--card-hover); }
+.btn-outline { background:none; border:2px solid var(--card-border); color:var(--muted); }
+
+/* Option buttons */
+.option-grid { display:grid; gap:8px; margin-bottom:16px; }
+.option-grid.cols-2 { grid-template-columns:1fr 1fr; }
+.option-grid.cols-3 { grid-template-columns:1fr 1fr 1fr; }
+.option-btn { background:var(--card); border:2px solid var(--card-border); border-radius:var(--radius); padding:14px 12px; color:var(--text); font-size:14px; font-weight:500; text-align:center; transition:all .15s; }
+.option-btn:active { transform:scale(0.97); }
+.option-btn.selected { border-color:var(--accent); background:rgba(139,154,126,0.1); color:var(--accent); }
+.option-btn.small { padding:10px 8px; font-size:13px; }
+
+/* Section groups */
+.section-group { margin-bottom:16px; }
+.section-group-title { font-size:12px; font-weight:600; color:var(--dim); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px; }
+
+/* Book picker modal */
+.modal-overlay { position:fixed; inset:0; background:rgba(47,46,46,0.4); z-index:100; display:flex; align-items:flex-end; justify-content:center; animation:fadeIn .2s; }
+.modal { background:var(--bg); border-radius:20px 20px 0 0; width:100%; max-width:500px; max-height:85vh; display:flex; flex-direction:column; animation:slideUp .3s; box-shadow:0 -4px 30px rgba(0,0,0,0.12); }
+.modal-header { padding:16px 20px; border-bottom:1px solid var(--card-border); display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+.modal-header h2 { font-size:18px; }
+.modal-close { background:var(--card); color:var(--muted); width:32px; height:32px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:18px; }
+.modal-search { padding:12px 20px; flex-shrink:0; }
+.modal-search input { width:100%; padding:12px 16px; background:var(--card); border:1px solid var(--card-border); border-radius:10px; color:var(--text); font-size:15px; outline:none; }
+.modal-search input::placeholder { color:var(--dim); }
+.modal-search input:focus { border-color:var(--accent); }
+.modal-body { flex:1; overflow-y:auto; padding:8px 20px 20px; -webkit-overflow-scrolling:touch; }
+.book-group-title { font-size:11px; font-weight:700; color:var(--dim); text-transform:uppercase; letter-spacing:1px; padding:12px 0 8px; }
+.book-btn { display:block; width:100%; text-align:left; padding:12px 14px; background:var(--card); border:1px solid var(--card-border); border-radius:8px; color:var(--text); font-size:15px; margin-bottom:6px; transition:all .1s; }
+.book-btn:active { background:var(--card-hover); }
+
+/* Chapter grid */
+.chapter-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(48px,1fr)); gap:6px; margin-bottom:16px; }
+.ch-btn { background:var(--card); border:2px solid var(--card-border); border-radius:8px; padding:10px 4px; color:var(--text); font-size:14px; font-weight:500; text-align:center; transition:all .1s; }
+.ch-btn.selected { border-color:var(--accent); background:rgba(139,154,126,0.12); color:var(--accent); }
+.ch-btn:active { transform:scale(0.93); }
+
+/* Result */
+.result-icon { font-size:64px; text-align:center; margin:20px 0 12px; }
+.result-text { text-align:center; font-size:22px; font-weight:700; margin-bottom:4px; }
+.result-sub { text-align:center; font-size:15px; color:var(--muted); margin-bottom:20px; }
+.result-detail { background:var(--card); border-radius:var(--radius); padding:16px; margin-bottom:20px; }
+.result-row { display:flex; justify-content:space-between; padding:8px 0; }
+.result-row:not(:last-child) { border-bottom:1px solid var(--card-border); }
+.result-label { color:var(--muted); font-size:14px; }
+.result-value { font-size:14px; font-weight:600; }
+
+/* Score bar */
+.score-bar { display:flex; align-items:center; gap:12px; background:var(--card); border-radius:var(--radius); padding:12px 16px; margin-bottom:16px; }
+.score-bar .label { font-size:13px; color:var(--muted); }
+.score-bar .value { font-size:18px; font-weight:700; color:var(--accent); }
+.score-bar .streak { margin-left:auto; font-size:13px; color:var(--dim); }
+
+/* Progress bar */
+.progress-bar { height:4px; background:var(--card-border); border-radius:2px; margin-bottom:16px; overflow:hidden; }
+.progress-fill { height:100%; background:var(--accent); border-radius:2px; transition:width .3s; }
+
+/* Summary */
+.summary-score { text-align:center; padding:30px 0 20px; }
+.summary-score .big { font-size:56px; font-weight:800; color:var(--accent); }
+.summary-score .of { font-size:20px; color:var(--muted); margin:0 4px; }
+.summary-stat { display:flex; justify-content:space-between; align-items:center; padding:14px 0; }
+.summary-stat:not(:last-child) { border-bottom:1px solid var(--card-border); }
+
+/* Settings */
+.setting-item { display:flex; justify-content:space-between; align-items:center; padding:14px 0; }
+.setting-item:not(:last-child) { border-bottom:1px solid var(--card-border); }
+.setting-label { font-size:15px; }
+.setting-desc { font-size:12px; color:var(--dim); margin-top:2px; }
+select { background:var(--card); color:var(--text); border:1px solid var(--card-border); border-radius:8px; padding:8px 12px; font-size:14px; font-family:inherit; }
+
+/* Loading */
+.loader { display:flex; flex-direction:column; align-items:center; justify-content:center; flex:1; gap:16px; }
+.spinner { width:36px; height:36px; border:3px solid var(--card-border); border-top-color:var(--accent); border-radius:50%; animation:spin .8s linear infinite; }
+.load-text { color:var(--muted); font-size:14px; }
+
+/* Home hero */
+.hero { text-align:center; padding:40px 0 30px; }
+.hero-icon { margin-bottom:16px; display:flex; justify-content:center; }
+.hero h1 { font-family:'Josefin Sans',sans-serif; font-size:30px; font-weight:700; margin-bottom:8px; letter-spacing:3px; text-transform:uppercase; }
+.hero p { color:var(--muted); font-size:15px; line-height:1.5; }
+.stats-row { display:flex; gap:8px; margin:20px 0; }
+.stat-card { flex:1; background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); padding:14px 8px; text-align:center; box-shadow:0 1px 3px rgba(0,0,0,0.04); }
+.stat-card .val { font-size:24px; font-weight:700; color:var(--accent); }
+.stat-card .lbl { font-size:11px; color:var(--dim); margin-top:2px; }
+
+/* Error */
+.error-card { background:rgba(196,92,92,0.08); border:1px solid rgba(196,92,92,0.25); border-radius:var(--radius); padding:16px; text-align:center; margin-bottom:16px; }
+.error-card p { color:var(--red); font-size:14px; margin-bottom:12px; }
+
+/* Animations */
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+@keyframes slideUp { from{transform:translateY(100%)} to{transform:translateY(0)} }
+@keyframes spin { to{transform:rotate(360deg)} }
+@keyframes pop { 0%{transform:scale(0.5);opacity:0} 50%{transform:scale(1.1)} 100%{transform:scale(1);opacity:1} }
+.pop { animation:pop .4s ease-out; }
+
+/* Study outline */
+.outline-item { padding:8px 0; border-bottom:1px solid var(--card-border); }
+.outline-item:last-child { border-bottom:none; }
+.outline-l0 { font-size:15px; font-weight:700; color:var(--text); padding-top:12px; }
+.outline-l1 { font-size:14px; font-weight:500; color:var(--muted); padding-left:16px; }
+.outline-l2 { font-size:13px; font-weight:400; color:var(--dim); padding-left:32px; }
+.study-book-btn { display:flex; align-items:center; justify-content:space-between; width:100%; text-align:left; padding:14px 16px; background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius); color:var(--text); font-size:15px; font-weight:500; margin-bottom:8px; transition:all .1s; }
+.study-book-btn:active { background:var(--card-hover); }
+.study-book-btn .ch-count { font-size:12px; color:var(--dim); font-weight:400; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState, useEffect, useCallback, useRef} = React;
+
+// ============================================================
+// DATA
+// ============================================================
+
+const BOOKS = [
+  {name:"Genesis",ch:50,t:"OT",g:"Pentateuch"},{name:"Exodus",ch:40,t:"OT",g:"Pentateuch"},
+  {name:"Leviticus",ch:27,t:"OT",g:"Pentateuch"},{name:"Numbers",ch:36,t:"OT",g:"Pentateuch"},
+  {name:"Deuteronomy",ch:34,t:"OT",g:"Pentateuch"},
+  {name:"Joshua",ch:24,t:"OT",g:"Historical"},{name:"Judges",ch:21,t:"OT",g:"Historical"},
+  {name:"Ruth",ch:4,t:"OT",g:"Historical"},{name:"1 Samuel",ch:31,t:"OT",g:"Historical"},
+  {name:"2 Samuel",ch:24,t:"OT",g:"Historical"},{name:"1 Kings",ch:22,t:"OT",g:"Historical"},
+  {name:"2 Kings",ch:25,t:"OT",g:"Historical"},{name:"1 Chronicles",ch:29,t:"OT",g:"Historical"},
+  {name:"2 Chronicles",ch:36,t:"OT",g:"Historical"},{name:"Ezra",ch:10,t:"OT",g:"Historical"},
+  {name:"Nehemiah",ch:13,t:"OT",g:"Historical"},{name:"Esther",ch:10,t:"OT",g:"Historical"},
+  {name:"Job",ch:42,t:"OT",g:"Poetry & Wisdom"},{name:"Psalms",ch:150,t:"OT",g:"Poetry & Wisdom"},
+  {name:"Proverbs",ch:31,t:"OT",g:"Poetry & Wisdom"},{name:"Ecclesiastes",ch:12,t:"OT",g:"Poetry & Wisdom"},
+  {name:"Song of Solomon",ch:8,t:"OT",g:"Poetry & Wisdom"},
+  {name:"Isaiah",ch:66,t:"OT",g:"Prophets"},{name:"Jeremiah",ch:52,t:"OT",g:"Prophets"},
+  {name:"Lamentations",ch:5,t:"OT",g:"Prophets"},{name:"Ezekiel",ch:48,t:"OT",g:"Prophets"},
+  {name:"Daniel",ch:12,t:"OT",g:"Prophets"},
+  {name:"Hosea",ch:14,t:"OT",g:"Minor Prophets"},{name:"Joel",ch:3,t:"OT",g:"Minor Prophets"},
+  {name:"Amos",ch:9,t:"OT",g:"Minor Prophets"},{name:"Obadiah",ch:1,t:"OT",g:"Minor Prophets"},
+  {name:"Jonah",ch:4,t:"OT",g:"Minor Prophets"},{name:"Micah",ch:7,t:"OT",g:"Minor Prophets"},
+  {name:"Nahum",ch:3,t:"OT",g:"Minor Prophets"},{name:"Habakkuk",ch:3,t:"OT",g:"Minor Prophets"},
+  {name:"Zephaniah",ch:3,t:"OT",g:"Minor Prophets"},{name:"Haggai",ch:2,t:"OT",g:"Minor Prophets"},
+  {name:"Zechariah",ch:14,t:"OT",g:"Minor Prophets"},{name:"Malachi",ch:4,t:"OT",g:"Minor Prophets"},
+  {name:"Matthew",ch:28,t:"NT",g:"Gospels"},{name:"Mark",ch:16,t:"NT",g:"Gospels"},
+  {name:"Luke",ch:24,t:"NT",g:"Gospels"},{name:"John",ch:21,t:"NT",g:"Gospels"},
+  {name:"Acts",ch:28,t:"NT",g:"Acts"},
+  {name:"Romans",ch:16,t:"NT",g:"Paul's Letters"},{name:"1 Corinthians",ch:16,t:"NT",g:"Paul's Letters"},
+  {name:"2 Corinthians",ch:13,t:"NT",g:"Paul's Letters"},{name:"Galatians",ch:6,t:"NT",g:"Paul's Letters"},
+  {name:"Ephesians",ch:6,t:"NT",g:"Paul's Letters"},{name:"Philippians",ch:4,t:"NT",g:"Paul's Letters"},
+  {name:"Colossians",ch:4,t:"NT",g:"Paul's Letters"},{name:"1 Thessalonians",ch:5,t:"NT",g:"Paul's Letters"},
+  {name:"2 Thessalonians",ch:3,t:"NT",g:"Paul's Letters"},{name:"1 Timothy",ch:6,t:"NT",g:"Paul's Letters"},
+  {name:"2 Timothy",ch:4,t:"NT",g:"Paul's Letters"},{name:"Titus",ch:3,t:"NT",g:"Paul's Letters"},
+  {name:"Philemon",ch:1,t:"NT",g:"Paul's Letters"},
+  {name:"Hebrews",ch:13,t:"NT",g:"General Letters"},{name:"James",ch:5,t:"NT",g:"General Letters"},
+  {name:"1 Peter",ch:5,t:"NT",g:"General Letters"},{name:"2 Peter",ch:3,t:"NT",g:"General Letters"},
+  {name:"1 John",ch:5,t:"NT",g:"General Letters"},{name:"2 John",ch:1,t:"NT",g:"General Letters"},
+  {name:"3 John",ch:1,t:"NT",g:"General Letters"},{name:"Jude",ch:1,t:"NT",g:"General Letters"},
+  {name:"Revelation",ch:22,t:"NT",g:"Revelation"}
+];
+
+const OT_GROUPS = ["Pentateuch","Historical","Poetry & Wisdom","Prophets","Minor Prophets"];
+const NT_GROUPS = ["Gospels","Acts","Paul's Letters","General Letters","Revelation"];
+const ALL_GROUPS = [...OT_GROUPS,...NT_GROUPS];
+
+const TRANSLATIONS = [
+  {id:"web",name:"World English Bible (WEB)"},
+  {id:"kjv",name:"King James Version (KJV)"},
+  {id:"bbe",name:"Bible in Basic English (BBE)"},
+  {id:"oeb-us",name:"Open English Bible (OEB)"},
+];
+
+// No pre-curated passages needed — the app dynamically draws from all 1,189 chapters of the Bible
+
+// ============================================================
+// BOOK OUTLINES (for Study mode)
+// ============================================================
+
+const OUTLINES = {
+  "Genesis": [
+    {l:0,t:"Creation and Early Humanity (1:1–2:25)"},
+    {l:0,t:"The Fall and Its Consequences (3:1–5:32)"},
+    {l:1,t:"The Serpent's Deception and Humanity's Disobedience (ch 3)"},
+    {l:1,t:"Cain and Abel; the Genealogy of Seth (ch 4–5)"},
+    {l:0,t:"The Flood and God's Covenant with Noah (6:1–9:29)"},
+    {l:1,t:"Preparation for and Account of the Flood (6:1–8:19)"},
+    {l:1,t:"God's Covenant with Noah (8:20–9:29)"},
+    {l:0,t:"The Genealogy of Noah's Sons (10:1–11:9)"},
+    {l:0,t:"The Genealogy Leading to Abraham (11:10–32)"},
+    {l:0,t:"Abraham: Call and Covenant (12:1–25:11)"},
+    {l:1,t:"God's Call and Abram's Journey to Canaan (12:1–14:24)"},
+    {l:1,t:"The Covenant and Promise (ch 15)"},
+    {l:1,t:"Hagar and Ishmael; Confirmation of the Covenant (ch 16–17)"},
+    {l:1,t:"Abraham's Hospitality and Intercession (ch 18–20)"},
+    {l:1,t:"Isaac's Birth and Abraham's Test (ch 21–22)"},
+    {l:1,t:"Sarah's Death and Abraham's Arrangements (ch 23–25:11)"},
+    {l:0,t:"Ishmael's Descendants (25:12–18)"},
+    {l:0,t:"Isaac: God's Promises Continued (25:19–26:35)"},
+    {l:0,t:"Jacob: The Chosen Heir (27:1–37:1)"},
+    {l:1,t:"Jacob Obtains the Blessing (ch 27)"},
+    {l:1,t:"Jacob's Journey and Encounter with God (ch 28–30)"},
+    {l:1,t:"Jacob's Return and Reconciliation with Esau (ch 31–33)"},
+    {l:1,t:"Dinah's Defilement and Jacob's Troubles (ch 34–36)"},
+    {l:0,t:"Joseph: From Slavery to Leadership (37:2–50:26)"},
+    {l:1,t:"Joseph Sold into Slavery (ch 37)"},
+    {l:1,t:"Judah and Tamar (ch 38)"},
+    {l:1,t:"Joseph's Rise and Temptation in Egypt (ch 39–40)"},
+    {l:1,t:"Joseph Interprets Pharaoh's Dreams (ch 41)"},
+    {l:1,t:"Joseph's Brothers Come to Egypt (ch 42–45)"},
+    {l:1,t:"Jacob's Migration to Egypt and Death (ch 46–50)"}
+  ],
+  "Exodus": [
+    {l:0,t:"Israel's Oppression in Egypt (1:1–2:25)"},
+    {l:0,t:"Moses' Call and God's Covenant (3:1–7:7)"},
+    {l:1,t:"Moses Called at the Burning Bush (ch 3)"},
+    {l:1,t:"God's Reassurance and Aaron's Role (ch 4)"},
+    {l:1,t:"Initial Requests and Plagues Begin (ch 5–7)"},
+    {l:0,t:"The Ten Plagues (7:8–12:36)"},
+    {l:1,t:"Water Turned to Blood and Frogs (7:14–8:15)"},
+    {l:1,t:"Gnats, Flies, Livestock Disease, and Boils (8:16–9:12)"},
+    {l:1,t:"Hail, Locusts, and Darkness (9:13–10:29)"},
+    {l:1,t:"The Tenth Plague: Death of the Firstborn (11:1–12:36)"},
+    {l:0,t:"The Passover and Exodus from Egypt (12:37–13:22)"},
+    {l:0,t:"Crossing the Red Sea (14:1–15:21)"},
+    {l:0,t:"Journey to Sinai (15:22–18:27)"},
+    {l:1,t:"Provision of Water and Food (15:22–16:36)"},
+    {l:1,t:"Water from the Rock and War with Amalek (ch 17)"},
+    {l:1,t:"Jethro's Counsel (ch 18)"},
+    {l:0,t:"The Covenant at Sinai (19:1–24:18)"},
+    {l:1,t:"God's Offer of the Covenant (ch 19)"},
+    {l:1,t:"The Ten Commandments (ch 20)"},
+    {l:1,t:"Laws and Regulations (21:1–23:33)"},
+    {l:1,t:"Ratification of the Covenant (ch 24)"},
+    {l:0,t:"Instructions for the Tabernacle (25:1–31:18)"},
+    {l:1,t:"Furnishings and Specifications (ch 25–27)"},
+    {l:1,t:"Priesthood and Priestly Garments (ch 28–29)"},
+    {l:1,t:"Laws and the Sabbath (ch 30–31)"},
+    {l:0,t:"The Golden Calf and Covenant Renewal (32:1–34:35)"},
+    {l:0,t:"Construction of the Tabernacle (35:1–40:38)"}
+  ],
+  "Leviticus": [
+    {l:0,t:"Instructions for Sacrifices (1:1–7:38)"},
+    {l:1,t:"The Burnt Offering (ch 1)"},
+    {l:1,t:"The Grain Offering (ch 2)"},
+    {l:1,t:"The Peace Offering (ch 3)"},
+    {l:1,t:"The Sin Offering (ch 4–5:13)"},
+    {l:1,t:"The Guilt Offering (5:14–6:7)"},
+    {l:1,t:"Additional Regulations for Offerings (6:8–7:38)"},
+    {l:0,t:"Consecration of Aaron and His Sons (8:1–10:20)"},
+    {l:1,t:"Aaron and Sons Ordained (ch 8)"},
+    {l:1,t:"First Offerings and Priestly Ministry (ch 9)"},
+    {l:1,t:"Nadab and Abihu's Disobedience (ch 10)"},
+    {l:0,t:"Laws of Clean and Unclean (11:1–15:33)"},
+    {l:1,t:"Clean and Unclean Animals (ch 11)"},
+    {l:1,t:"Uncleanness after Childbirth (ch 12)"},
+    {l:1,t:"Diseases and Infections (ch 13–14)"},
+    {l:1,t:"Uncleanness from Bodily Discharges (ch 15)"},
+    {l:0,t:"The Day of Atonement (ch 16)"},
+    {l:0,t:"Laws on Sexual Morality (ch 17–20)"},
+    {l:1,t:"Regulations about Blood and Idolatry (ch 17)"},
+    {l:1,t:"Laws on Sexual Relations (ch 18)"},
+    {l:1,t:"Various Moral Laws (ch 19)"},
+    {l:1,t:"Penalties for Violations (ch 20)"},
+    {l:0,t:"Rules for Priests (ch 21–22)"},
+    {l:0,t:"The Festivals (ch 23)"},
+    {l:1,t:"The Sabbath and Passover (23:1–8)"},
+    {l:1,t:"Feast of Unleavened Bread and Firstfruits (23:9–22)"},
+    {l:1,t:"Feast of Weeks, Trumpets, Atonement, and Booths (23:23–44)"},
+    {l:0,t:"Lampstand, Showbread, and Blasphemy (ch 24)"},
+    {l:0,t:"The Jubilee Year and Redemption Laws (ch 25)"},
+    {l:0,t:"Blessings for Obedience and Curses for Disobedience (ch 26)"},
+    {l:0,t:"Laws Regarding Vows (ch 27)"}
+  ],
+  "Numbers": [
+    {l:0,t:"Organization of Israel at Sinai (1:1–4:49)"},
+    {l:1,t:"Census of the Tribes (ch 1)"},
+    {l:1,t:"Arrangement of the Camps (ch 2)"},
+    {l:1,t:"Assignment of Levite Duties (ch 3–4)"},
+    {l:0,t:"Laws and Offerings (5:1–9:14)"},
+    {l:1,t:"Regulations for Uncleanness and Restitution (ch 5)"},
+    {l:1,t:"The Nazirite Vow and Priestly Blessing (ch 6)"},
+    {l:1,t:"Dedication Offerings of the Tribes (ch 7)"},
+    {l:1,t:"Consecration of Levites and Passover (ch 8–9)"},
+    {l:0,t:"Departure from Sinai (9:15–10:36)"},
+    {l:0,t:"Journey to Kadesh-Barnea (11:1–14:45)"},
+    {l:1,t:"Complaints and Fire from the Lord (ch 11)"},
+    {l:1,t:"Miriam and Aaron's Rebellion (ch 12)"},
+    {l:1,t:"The Twelve Spies and Israel's Rebellion (ch 13–14)"},
+    {l:0,t:"Laws in the Wilderness (15:1–19:22)"},
+    {l:1,t:"Laws for Grain and Drink Offerings (ch 15)"},
+    {l:1,t:"Korah's Rebellion (ch 16)"},
+    {l:1,t:"Aaron's Rod and Priestly Responsibilities (ch 17–18)"},
+    {l:1,t:"Laws of Purification (ch 19)"},
+    {l:0,t:"Journey Resumed and Conflicts (20:1–21:35)"},
+    {l:1,t:"Water from the Rock; Death of Miriam and Aaron (ch 20)"},
+    {l:1,t:"Victory over the Canaanites (ch 21)"},
+    {l:0,t:"Balaam's Oracles (22:1–24:25)"},
+    {l:0,t:"Israel's Covenant Renewal (ch 25)"},
+    {l:0,t:"Second Census and Inheritance Laws (ch 26–27)"},
+    {l:0,t:"Laws for Vows and Daily Offerings (ch 28–30)"},
+    {l:0,t:"War with Midian and Division of Spoils (ch 31)"},
+    {l:0,t:"Settlement East of Jordan (ch 32)"},
+    {l:0,t:"Summary of Journey and Boundaries (ch 33–36)"}
+  ],
+  "Deuteronomy": [
+    {l:0,t:"First Address: Historical Review (1:1–4:43)"},
+    {l:1,t:"Israel at Sinai and Journey to Moab (1:1–3:29)"},
+    {l:1,t:"Exhortation to Obedience (4:1–43)"},
+    {l:0,t:"Second Address: The Law (4:44–28:68)"},
+    {l:1,t:"Introduction and the Ten Commandments (4:44–5:33)"},
+    {l:1,t:"The Greatest Commandment (ch 6)"},
+    {l:1,t:"Separation from Pagan Nations (ch 7)"},
+    {l:1,t:"Warnings against Forgetting God (ch 8)"},
+    {l:1,t:"Possession of the Land by Grace (ch 9–10)"},
+    {l:1,t:"Blessings for Obedience; Warning against Idolatry (ch 11)"},
+    {l:1,t:"Central Place of Worship and Dietary Laws (ch 12–14)"},
+    {l:1,t:"Release of Servants and Firstlings (ch 15)"},
+    {l:1,t:"Festivals and Justice (ch 16–17)"},
+    {l:1,t:"Priests, Levites, and Divination (ch 18)"},
+    {l:1,t:"Cities of Refuge and Laws on Murder (ch 19)"},
+    {l:1,t:"Laws of Warfare (ch 20)"},
+    {l:1,t:"Laws on Inheritance, Rebellion, and Murder (ch 21)"},
+    {l:1,t:"Miscellaneous Laws (ch 22–25)"},
+    {l:1,t:"Firstfruits, Tithes, and the Year of Release (ch 26)"},
+    {l:1,t:"Curses for Disobedience (ch 27–28)"},
+    {l:0,t:"Third Address: Covenant Renewal (29:1–30:20)"},
+    {l:0,t:"Joshua Commissioned and Song of Moses (ch 31–32)"},
+    {l:0,t:"Moses' Blessing on the Tribes (ch 33)"},
+    {l:0,t:"Death of Moses (ch 34)"}
+  ],
+  "Joshua": [
+    {l:0,t:"Joshua Commissioned (1:1–18)"},
+    {l:0,t:"Reconnaissance of Jericho (ch 2)"},
+    {l:0,t:"Crossing the Jordan (ch 3–4)"},
+    {l:0,t:"Preparations for War and Circumcision (ch 5)"},
+    {l:0,t:"Conquest of Jericho (ch 6)"},
+    {l:0,t:"Achan's Sin and Defeat at Ai (ch 7)"},
+    {l:0,t:"Conquest of Ai (ch 8)"},
+    {l:0,t:"Treaty with the Gibeonites (ch 9)"},
+    {l:0,t:"The Southern Campaign (ch 10)"},
+    {l:0,t:"The Northern Campaign (ch 11)"},
+    {l:0,t:"Summary of Conquered Kings (ch 12)"},
+    {l:0,t:"Tribal Allotments (ch 13–21)"},
+    {l:1,t:"Land East of Jordan (ch 13)"},
+    {l:1,t:"Land West of Jordan for Judah and Joseph (ch 14–17)"},
+    {l:1,t:"Land for Other Tribes (ch 18–19)"},
+    {l:1,t:"Cities of Refuge and Levite Cities (ch 20–21)"},
+    {l:0,t:"Dismissal of Eastern Tribes (ch 22)"},
+    {l:0,t:"Joshua's Farewell Address (ch 23)"},
+    {l:0,t:"Covenant Renewal at Shechem (ch 24)"}
+  ],
+  "Judges": [
+    {l:0,t:"Incomplete Conquest and Apostasy (1:1–2:5)"},
+    {l:0,t:"Cycle of Judges (2:6–16:31)"},
+    {l:1,t:"Introduction: The Pattern of Apostasy (2:6–3:6)"},
+    {l:1,t:"Othniel and Ehud (3:7–30)"},
+    {l:1,t:"Shamgar and Deborah (3:31–5:31)"},
+    {l:1,t:"Gideon's Call and Victory (6:1–8:35)"},
+    {l:1,t:"Abimelech's Usurpation (ch 9)"},
+    {l:1,t:"Tola and Jair (10:1–5)"},
+    {l:1,t:"Jephthah's Vow and Victory (10:6–12:7)"},
+    {l:1,t:"Ibzan, Elon, and Abdon (12:8–15)"},
+    {l:1,t:"Samson's Birth and Early Victories (ch 13–14)"},
+    {l:1,t:"Samson's Exploits (ch 15–16)"},
+    {l:0,t:"Appendices: Micah's Idolatry and Civil War (ch 17–21)"},
+    {l:1,t:"The Levite and Micah's Priest (ch 17–18)"},
+    {l:1,t:"The Levite's Concubine and War (ch 19–21)"}
+  ],
+  "Ruth": [
+    {l:0,t:"Naomi and Ruth's Need (1:1–22)"},
+    {l:0,t:"Ruth Gleans in Boaz's Field (ch 2)"},
+    {l:0,t:"Ruth's Request to Boaz (ch 3)"},
+    {l:0,t:"Boaz Redeems Ruth (ch 4)"}
+  ],
+  "1 Samuel": [
+    {l:0,t:"Samuel's Birth and Dedication (1:1–2:36)"},
+    {l:0,t:"The Lord Calls Samuel (ch 3)"},
+    {l:0,t:"The Ark of the Covenant Captured (ch 4)"},
+    {l:0,t:"The Ark Returns to Israel (5:1–7:2)"},
+    {l:0,t:"Samuel Judges Israel (ch 7)"},
+    {l:0,t:"Israel Requests a King (ch 8)"},
+    {l:0,t:"Saul Anointed as King (ch 9–10)"},
+    {l:0,t:"Saul Confirmed as King (ch 11)"},
+    {l:0,t:"Samuel's Farewell Address (ch 12)"},
+    {l:0,t:"Saul's Early Victories (ch 13–14)"},
+    {l:0,t:"Saul Disobeys the Lord (ch 15)"},
+    {l:0,t:"David Anointed and Brought to Saul (ch 16)"},
+    {l:0,t:"David and Goliath (ch 17)"},
+    {l:0,t:"Jonathan's Friendship and Saul's Jealousy (ch 18)"},
+    {l:0,t:"Saul Tries to Kill David (ch 19)"},
+    {l:0,t:"David Flees from Saul (ch 20–24)"},
+    {l:0,t:"Samuel's Death; David with the Philistines (ch 25–27)"},
+    {l:0,t:"Saul and the Witch of Endor (ch 28)"},
+    {l:0,t:"David and the Amalekites (ch 29–30)"},
+    {l:0,t:"Death of Saul (ch 31)"}
+  ],
+  "2 Samuel": [
+    {l:0,t:"David Learns of Saul's Death (ch 1)"},
+    {l:0,t:"David King of Judah (ch 2–4)"},
+    {l:1,t:"War between Houses of Saul and David (ch 2–3)"},
+    {l:1,t:"Murder of Abner and Ishbaal (ch 3–4)"},
+    {l:0,t:"David King of All Israel (ch 5)"},
+    {l:0,t:"The Ark Brought to Jerusalem (ch 6)"},
+    {l:0,t:"God's Covenant with David (ch 7)"},
+    {l:0,t:"David's Military Victories (ch 8)"},
+    {l:0,t:"David's Kindness to Mephibosheth (ch 9)"},
+    {l:0,t:"War with the Ammonites (ch 10)"},
+    {l:0,t:"David and Bathsheba (ch 11)"},
+    {l:0,t:"Nathan's Rebuke and David's Repentance (ch 12)"},
+    {l:0,t:"Amnon's Sin and Murder (ch 13)"},
+    {l:0,t:"Absalom's Revenge and Exile (ch 13–14)"},
+    {l:0,t:"Absalom's Conspiracy (ch 15)"},
+    {l:0,t:"David Flees Jerusalem (ch 15–16)"},
+    {l:0,t:"Absalom's Advice and Hushai's Counter-advice (ch 17)"},
+    {l:0,t:"Battle and Death of Absalom (ch 18)"},
+    {l:0,t:"David Mourns and Returns to Jerusalem (ch 19)"},
+    {l:0,t:"Rebellion of Sheba (ch 20)"},
+    {l:0,t:"David's Officials and Later Events (ch 21–24)"},
+    {l:1,t:"Famine and Execution of Saul's Sons (ch 21)"},
+    {l:1,t:"David's Songs of Praise (ch 22–23)"},
+    {l:1,t:"The Census and Plague (ch 24)"}
+  ],
+  "1 Kings": [
+    {l:0,t:"Solomon Becomes King (1:1–2:46)"},
+    {l:1,t:"David's Last Days and Solomon's Anointing (ch 1)"},
+    {l:1,t:"David's Charge and Death; Solomon's Kingdom Secured (ch 2)"},
+    {l:0,t:"Solomon's Wisdom and Wealth (ch 3–4)"},
+    {l:0,t:"Preparations for Building the Temple (ch 5)"},
+    {l:0,t:"Building of the Temple (ch 6)"},
+    {l:0,t:"Building of Solomon's Palace (ch 7)"},
+    {l:0,t:"The Ark Brought into the Temple (ch 8)"},
+    {l:1,t:"Dedication of the Temple (8:1–66)"},
+    {l:1,t:"God's Warning to Solomon (9:1–9)"},
+    {l:0,t:"Solomon's Other Building Projects (9:10–28)"},
+    {l:0,t:"The Queen of Sheba Visits Solomon (ch 10)"},
+    {l:0,t:"Solomon's Wealth and Wives (ch 11)"},
+    {l:1,t:"Solomon's Apostasy (11:1–8)"},
+    {l:1,t:"God's Judgment (11:9–43)"},
+    {l:0,t:"Division of the Kingdom (ch 12)"},
+    {l:0,t:"Jeroboam and the Northern Kingdom (12:25–14:20)"},
+    {l:0,t:"Kings of Judah (ch 14–16)"},
+    {l:0,t:"Elijah's Ministry Begins (ch 17)"},
+    {l:0,t:"Elijah on Mount Carmel (ch 18)"},
+    {l:0,t:"Elijah's Escape and Call of Elisha (ch 19)"},
+    {l:0,t:"Wars with Syria (ch 20–21)"},
+    {l:0,t:"Micaiah Prophesies Against Ahab (ch 22)"}
+  ],
+  "2 Kings": [
+    {l:0,t:"Ahaziah's Illness and Death (ch 1)"},
+    {l:0,t:"Elijah Taken to Heaven (ch 2)"},
+    {l:0,t:"Elisha's Early Miracles (ch 2–4)"},
+    {l:0,t:"Naaman's Healing (ch 5)"},
+    {l:0,t:"Recovery of the Axe Head (ch 6)"},
+    {l:0,t:"Deliverance from Syria (ch 6–7)"},
+    {l:0,t:"Jehu's Anointing and Reign (ch 9–10)"},
+    {l:0,t:"Athaliah and Joash (ch 11–12)"},
+    {l:0,t:"Later Kings of Israel and Judah (ch 13–16)"},
+    {l:0,t:"Fall of the Northern Kingdom (ch 17)"},
+    {l:0,t:"Hezekiah's Reign (ch 18–20)"},
+    {l:1,t:"Assyrian Invasion and Deliverance (ch 18–19)"},
+    {l:1,t:"Hezekiah's Illness and Recovery (ch 20)"},
+    {l:0,t:"Manasseh and Amon (ch 21)"},
+    {l:0,t:"Josiah's Reign and Reform (ch 22–23)"},
+    {l:1,t:"Discovery of the Book of the Law (ch 22)"},
+    {l:1,t:"Josiah's Reforms (ch 23)"},
+    {l:0,t:"Final Kings of Judah (ch 24)"},
+    {l:0,t:"Fall of Jerusalem (ch 25)"}
+  ],
+  "1 Chronicles": [
+    {l:0,t:"Genealogy from Adam to Saul (1:1–9:44)"},
+    {l:1,t:"Adam to Abraham (ch 1)"},
+    {l:1,t:"Abraham to David (ch 2–4)"},
+    {l:1,t:"Other Tribes (ch 5–9)"},
+    {l:0,t:"Death of Saul (ch 10)"},
+    {l:0,t:"David Anointed King (ch 11)"},
+    {l:0,t:"David's Mighty Men (ch 11–12)"},
+    {l:0,t:"The Ark Brought to Jerusalem (ch 13–16)"},
+    {l:0,t:"David's Desire to Build a Temple (ch 17)"},
+    {l:0,t:"David's Military Victories (ch 18–20)"},
+    {l:0,t:"The Census and Plague (ch 21)"},
+    {l:0,t:"Preparation for Building the Temple (ch 22)"},
+    {l:0,t:"Organization of Priests and Levites (ch 23–26)"},
+    {l:0,t:"The Army and Administrative Officers (ch 27)"},
+    {l:0,t:"David's Final Charge and Assembly (ch 28)"},
+    {l:0,t:"Offerings and Solomon Anointed King (ch 29)"}
+  ],
+  "2 Chronicles": [
+    {l:0,t:"Solomon Becomes King (ch 1)"},
+    {l:0,t:"Building the Temple (ch 2–7)"},
+    {l:1,t:"Preparations and Building (ch 2–6)"},
+    {l:1,t:"Dedication of the Temple (ch 7)"},
+    {l:0,t:"Solomon's Splendor and Death (ch 8–9)"},
+    {l:0,t:"Division of the Kingdom (ch 10)"},
+    {l:0,t:"Early Kings of Judah (ch 11–12)"},
+    {l:0,t:"Rehoboam's Reign (ch 12)"},
+    {l:0,t:"Abijah and Asa (ch 13–14)"},
+    {l:0,t:"Jehoshaphat's Reign (ch 17–20)"},
+    {l:0,t:"Jehoram and Ahaziah (ch 21–22)"},
+    {l:0,t:"Joash Under Jehoiada (ch 23–24)"},
+    {l:0,t:"Amaziah and Uzziah (ch 25–26)"},
+    {l:0,t:"Jotham and Ahaz (ch 27–28)"},
+    {l:0,t:"Hezekiah's Reign and Reform (ch 29–32)"},
+    {l:1,t:"Cleansing of the Temple (ch 29)"},
+    {l:1,t:"Celebration of Passover (ch 30)"},
+    {l:1,t:"Destruction of Idols (ch 31)"},
+    {l:1,t:"Assyrian Invasion and Deliverance (ch 32)"},
+    {l:0,t:"Manasseh and Amon (ch 33)"},
+    {l:0,t:"Josiah's Reign and Reform (ch 34–35)"},
+    {l:0,t:"Final Kings of Judah (ch 36)"}
+  ],
+  "Ezra": [
+    {l:0,t:"Cyrus's Decree and Return of Exiles (ch 1)"},
+    {l:0,t:"List of Returning Exiles (ch 2)"},
+    {l:0,t:"Rebuilding of the Temple Begun (ch 3)"},
+    {l:0,t:"Opposition to Rebuilding (ch 4)"},
+    {l:0,t:"Resumption of Temple Construction (ch 5–6)"},
+    {l:0,t:"Completion and Dedication of Temple (ch 6)"},
+    {l:0,t:"Ezra's Arrival in Jerusalem (ch 7)"},
+    {l:0,t:"Those Who Returned with Ezra (ch 8)"},
+    {l:0,t:"Ezra's Concern for Mixed Marriages (ch 9)"},
+    {l:0,t:"Confession and Covenant Renewal (ch 10)"}
+  ],
+  "Nehemiah": [
+    {l:0,t:"Nehemiah's Prayer and Commission (ch 1)"},
+    {l:0,t:"Nehemiah Sent to Jerusalem (ch 2)"},
+    {l:0,t:"Building the Wall (ch 3)"},
+    {l:0,t:"Opposition to the Building (ch 4–6)"},
+    {l:1,t:"Ridicule and Opposition (ch 4)"},
+    {l:1,t:"Internal Dissension (ch 5)"},
+    {l:1,t:"Further Opposition and Completion (ch 6)"},
+    {l:0,t:"List of Returnees (ch 7)"},
+    {l:0,t:"Reading of the Law and Celebration (ch 8)"},
+    {l:0,t:"Confession of Sins (ch 9)"},
+    {l:0,t:"Covenant of the People (ch 10)"},
+    {l:0,t:"Residents of Jerusalem and Other Cities (ch 11)"},
+    {l:0,t:"Dedication of the Wall (ch 12)"},
+    {l:0,t:"Reforms and Cleansing (ch 13)"}
+  ],
+  "Esther": [
+    {l:0,t:"Vashti Deposed (ch 1)"},
+    {l:0,t:"Esther Made Queen (ch 2)"},
+    {l:0,t:"Mordecai Discovers a Conspiracy (ch 2)"},
+    {l:0,t:"Haman's Plot Against the Jews (ch 3)"},
+    {l:0,t:"Esther's Response to the Crisis (ch 4)"},
+    {l:0,t:"Esther's Approach to the King (ch 5)"},
+    {l:0,t:"Haman's Boasting and Decline (ch 5–6)"},
+    {l:0,t:"Esther's Dinner and Haman's Fall (ch 7)"},
+    {l:0,t:"Deliverance of the Jews (ch 8)"},
+    {l:0,t:"Vengeance of the Jews (ch 9)"},
+    {l:0,t:"Establishment of the Feast of Purim (ch 9–10)"}
+  ],
+  "Job": [
+    {l:0,t:"Job's Afflictions (ch 1–2)"},
+    {l:1,t:"Job's Integrity Tested (ch 1–2)"},
+    {l:0,t:"Job's Lament (ch 3)"},
+    {l:0,t:"First Cycle of Speeches (ch 4–14)"},
+    {l:1,t:"Eliphaz's First Speech (ch 4–5)"},
+    {l:1,t:"Job's First Response (ch 6–7)"},
+    {l:1,t:"Bildad's First Speech (ch 8)"},
+    {l:1,t:"Job's Second Response (ch 9–10)"},
+    {l:1,t:"Zophar's First Speech (ch 11)"},
+    {l:1,t:"Job's Third Response (ch 12–14)"},
+    {l:0,t:"Second Cycle of Speeches (ch 15–21)"},
+    {l:1,t:"Eliphaz's Second Speech (ch 15)"},
+    {l:1,t:"Job's Fourth Response (ch 16–17)"},
+    {l:1,t:"Bildad's Second Speech (ch 18)"},
+    {l:1,t:"Job's Fifth Response (ch 19)"},
+    {l:1,t:"Zophar's Second Speech (ch 20)"},
+    {l:1,t:"Job's Sixth Response (ch 21)"},
+    {l:0,t:"Third Cycle and Elihu's Speeches (ch 22–37)"},
+    {l:1,t:"Eliphaz's Third Speech (ch 22)"},
+    {l:1,t:"Job's Seventh Response (ch 23–24)"},
+    {l:1,t:"Bildad's Third Speech (ch 25)"},
+    {l:1,t:"Job's Eighth Response (ch 26–31)"},
+    {l:1,t:"Elihu's Four Speeches (ch 32–37)"},
+    {l:0,t:"God's First Speech (ch 38–39)"},
+    {l:0,t:"God's Second Speech (ch 40–41)"},
+    {l:0,t:"Job's Submission and Restoration (ch 42)"}
+  ],
+  "Psalms": [
+    {l:0,t:"Book One (Psalms 1–41)"},
+    {l:1,t:"Psalm 1: Two Ways"},
+    {l:1,t:"Psalm 2–10: Royal Psalms and Prayers"},
+    {l:1,t:"Psalm 11–20: Lament and Confidence"},
+    {l:1,t:"Psalm 21–30: Royal Psalm and Thanksgiving"},
+    {l:1,t:"Psalm 31–41: Laments and Praises"},
+    {l:0,t:"Book Two (Psalms 42–72)"},
+    {l:1,t:"Psalm 42–50: Laments and Instruction"},
+    {l:1,t:"Psalm 51–60: Repentance, Laments, and Praise"},
+    {l:1,t:"Psalm 61–72: Confidence, Royal Psalms, and Wisdom"},
+    {l:0,t:"Book Three (Psalms 73–89)"},
+    {l:1,t:"Psalm 73–80: Wisdom and Lament for Zion"},
+    {l:1,t:"Psalm 81–89: Covenant and Praise"},
+    {l:0,t:"Book Four (Psalms 90–106)"},
+    {l:1,t:"Psalm 90–99: God's Sovereignty and Creation"},
+    {l:1,t:"Psalm 100–106: Praise and Confession"},
+    {l:0,t:"Book Five (Psalms 107–150)"},
+    {l:1,t:"Psalm 107–117: Thanksgiving and Hallel Psalms"},
+    {l:1,t:"Psalm 118–130: Hallel and Ascent Psalms"},
+    {l:1,t:"Psalm 131–150: Praise and Worship"}
+  ],
+  "Proverbs": [
+    {l:0,t:"Prologue: Purpose and Theme (1:1–7)"},
+    {l:0,t:"The Superiority of Wisdom's Way (1:8–9:18)"},
+    {l:1,t:"Appeals and Warnings to Youth (1:8–33)"},
+    {l:1,t:"Commendation of Wisdom (ch 2–4)"},
+    {l:1,t:"Warnings against Folly (ch 5–7)"},
+    {l:2,t:"Warning against adultery (ch 5)"},
+    {l:2,t:"Warning against perverse ways (6:1–19)"},
+    {l:2,t:"Cost of committing adultery (6:20–35)"},
+    {l:2,t:"Warning against the enticements of an adulteress (ch 7)"},
+    {l:1,t:"Appeals Addressed to Youth (ch 8–9)"},
+    {l:2,t:"Wisdom's Appeal & Pre-Eminence (ch 8)"},
+    {l:2,t:"Invitations of Woman Wisdom & Folly (ch 9)"},
+    {l:0,t:"The Main Collection of Solomon's Proverbs (10:1–22:16)"},
+    {l:0,t:"The 30 Sayings of the Wise (22:17–24:22)"},
+    {l:0,t:"Additional Sayings of the Wise (24:23–34)"},
+    {l:0,t:"Hezekiah's Collection of Solomon's Proverbs (ch 25–29)"},
+    {l:0,t:"The Words of Agur (ch 30)"},
+    {l:0,t:"Epilogue"},
+    {l:1,t:"Wisdom of Instruction: The Words of King Lemuel (31:1–9)"},
+    {l:1,t:"Wisdom of Observation: The Ideal Woman (31:10–31)"}
+  ],
+  "Ecclesiastes": [
+    {l:0,t:"Introduction: The Preacher's Theme (1:1–11)"},
+    {l:0,t:"The Preacher's Analysis of Work and Pleasure (1:12–2:26)"},
+    {l:0,t:"A Time for Everything (ch 3)"},
+    {l:0,t:"Observations on Oppression and Injustice (ch 4)"},
+    {l:0,t:"Warnings against Foolish Vows and Rash Speech (ch 5)"},
+    {l:0,t:"The Problem of Riches and Security (ch 6)"},
+    {l:0,t:"Wisdom Better Than Folly (ch 7)"},
+    {l:0,t:"Wisdom Has Its Limits (ch 8)"},
+    {l:0,t:"The Fate of All People (ch 9)"},
+    {l:0,t:"Wisdom on Diligence and Government (ch 10)"},
+    {l:0,t:"Warnings about Investments and Contentment (ch 11)"},
+    {l:0,t:"Remember Your Creator While Young (ch 12)"}
+  ],
+  "Song of Solomon": [
+    {l:0,t:"Title (1:1)"},
+    {l:0,t:"The Beloved's First Words (1:2–8)"},
+    {l:0,t:"Mutual Admiration (1:9–2:7)"},
+    {l:0,t:"The Beloved's Dream (2:8–3:5)"},
+    {l:0,t:"The Wedding Procession (3:6–11)"},
+    {l:0,t:"Mutual Praise (4:1–5:1)"},
+    {l:0,t:"The Lover's Absence (5:2–6:3)"},
+    {l:0,t:"Praise of the Beloved's Beauty (6:4–7:9)"},
+    {l:0,t:"Longing and Love (7:10–8:4)"},
+    {l:0,t:"Conclusion: The Power of Love (8:5–14)"}
+  ],
+  "Isaiah": [
+    {l:0,t:"Call and Commission of Isaiah (ch 1–6)"},
+    {l:1,t:"Judgment on Judah (ch 1)"},
+    {l:1,t:"Future Glory of Zion (ch 2–4)"},
+    {l:1,t:"Song of the Vineyard (ch 5)"},
+    {l:1,t:"Isaiah's Commission (ch 6)"},
+    {l:0,t:"Assurance Against Assyria (ch 7–12)"},
+    {l:1,t:"The Sign of Immanuel (ch 7)"},
+    {l:1,t:"Assyrian Invasion Foreseen (ch 8)"},
+    {l:1,t:"Promise of the Messiah (ch 9–11)"},
+    {l:1,t:"Song of Praise (ch 12)"},
+    {l:0,t:"Burdens Against Foreign Nations (ch 13–23)"},
+    {l:0,t:"Apocalyptic Judgment and Restoration (ch 24–27)"},
+    {l:0,t:"Six Woes (ch 28–33)"},
+    {l:0,t:"Deliverance from Assyria (ch 34–35)"},
+    {l:0,t:"Historical Interlude: Sennacherib (ch 36–39)"},
+    {l:1,t:"Assyrian Siege and Deliverance (ch 36–37)"},
+    {l:1,t:"Hezekiah's Illness and Recovery (ch 38)"},
+    {l:1,t:"Embassy of Merodach-Baladan (ch 39)"},
+    {l:0,t:"Comfort for Exiles (ch 40–55)"},
+    {l:1,t:"God's Comfort for His People (ch 40)"},
+    {l:1,t:"The Futility of Idols (ch 41)"},
+    {l:1,t:"The Servant of the Lord (ch 42)"},
+    {l:1,t:"God Alone is Savior (ch 43)"},
+    {l:1,t:"Idolatry is Foolish (ch 44)"},
+    {l:1,t:"Cyrus the Liberator (ch 45)"},
+    {l:1,t:"The Fall of Babylon (ch 46)"},
+    {l:1,t:"Judgment on Babylon (ch 47)"},
+    {l:1,t:"Israel Refined and Restored (ch 48)"},
+    {l:1,t:"The Servant's Mission (ch 49)"},
+    {l:1,t:"Salvation Is at Hand (ch 50)"},
+    {l:1,t:"Encouragement in Distress (ch 51)"},
+    {l:1,t:"Awakening to Salvation (ch 52)"},
+    {l:1,t:"The Suffering Servant (ch 53)"},
+    {l:1,t:"An Everlasting Covenant (ch 54)"},
+    {l:1,t:"Invitation to Salvation (ch 55)"},
+    {l:0,t:"Fulfillment of the Promise (ch 56–66)"},
+    {l:1,t:"Keeping the Covenant (ch 56)"},
+    {l:1,t:"Condemnation of Idolatry (ch 57)"},
+    {l:1,t:"True Fasting and Sabbath Observance (ch 58)"},
+    {l:1,t:"Sin Separates from God (ch 59)"},
+    {l:1,t:"Glory of the Redeemed Zion (ch 60)"},
+    {l:1,t:"The Year of Jubilee (ch 61)"},
+    {l:1,t:"God's Salvation Assured (ch 62)"},
+    {l:1,t:"God's Day of Vengeance (ch 63)"},
+    {l:1,t:"Prayer for Mercy (ch 64)"},
+    {l:1,t:"Response to Prayer (ch 65)"},
+    {l:1,t:"Final Judgment and New Creation (ch 66)"}
+  ],
+  "Jeremiah": [
+    {l:0,t:"Call of Jeremiah (ch 1)"},
+    {l:0,t:"The Lord's Case Against Israel (ch 2–3)"},
+    {l:0,t:"Call to Repentance (ch 4–6)"},
+    {l:0,t:"The Temple Sermon (ch 7–10)"},
+    {l:0,t:"Covenant Broken (ch 11)"},
+    {l:0,t:"Jeremiah's Complaints (ch 12)"},
+    {l:0,t:"Symbolic Acts (ch 13)"},
+    {l:0,t:"Drought and Prayer (ch 14–15)"},
+    {l:0,t:"Jeremiah's Celibacy (ch 16)"},
+    {l:0,t:"The Potter and Clay (ch 18)"},
+    {l:0,t:"Arrest and Trial of Jeremiah (ch 19–20)"},
+    {l:0,t:"Messages to Kings of Judah (ch 21–24)"},
+    {l:0,t:"The Cup of Wrath (ch 25)"},
+    {l:0,t:"Jeremiah's Persecution (ch 26)"},
+    {l:0,t:"Yoke of Babylon (ch 27–28)"},
+    {l:0,t:"Letter to Exiles (ch 29)"},
+    {l:0,t:"Book of Restoration (ch 30–33)"},
+    {l:1,t:"Restoration of Israel (ch 30)"},
+    {l:1,t:"Hope for the Future (ch 31)"},
+    {l:1,t:"Redemption of Land (ch 32)"},
+    {l:1,t:"Reign of Righteousness (ch 33)"},
+    {l:0,t:"Events Before the Fall (ch 34–39)"},
+    {l:1,t:"Warning to King Zedekiah (ch 34)"},
+    {l:1,t:"Test of Obedience (ch 35)"},
+    {l:1,t:"Burning of Scroll (ch 36)"},
+    {l:1,t:"Jeremiah Imprisoned (ch 37)"},
+    {l:1,t:"In the Cistern and Freed (ch 38)"},
+    {l:1,t:"Fall of Jerusalem (ch 39)"},
+    {l:0,t:"After the Fall of Jerusalem (ch 40–45)"},
+    {l:0,t:"Oracles Against Foreign Nations (ch 46–51)"},
+    {l:0,t:"Fall of Babylon (ch 51)"},
+    {l:0,t:"Historical Appendix (ch 52)"}
+  ],
+  "Lamentations": [
+    {l:0,t:"First Lament: Desolation of Jerusalem (ch 1)"},
+    {l:0,t:"Second Lament: God's Anger (ch 2)"},
+    {l:0,t:"Third Lament: Individual Suffering (ch 3)"},
+    {l:0,t:"Fourth Lament: Siege and Famine (ch 4)"},
+    {l:0,t:"Fifth Lament: Prayer for Restoration (ch 5)"}
+  ],
+  "Ezekiel": [
+    {l:0,t:"Ezekiel's Call and Commission (ch 1–3)"},
+    {l:1,t:"The Throne of God (ch 1)"},
+    {l:1,t:"Commissioning of the Watchman (ch 2–3)"},
+    {l:0,t:"Judgment on Jerusalem (ch 4–24)"},
+    {l:1,t:"Symbolic Acts of the Siege (ch 4–5)"},
+    {l:1,t:"Prophecy Against Mount Seir (ch 6)"},
+    {l:1,t:"The End is Here (ch 7)"},
+    {l:1,t:"Idolatry in the Temple (ch 8)"},
+    {l:1,t:"Slaughter of Idolaters (ch 9)"},
+    {l:1,t:"The Throne of God and Cherubim (ch 10)"},
+    {l:1,t:"The Spirit and the Whirlwind (ch 11)"},
+    {l:1,t:"Signs of Exile (ch 12)"},
+    {l:1,t:"False Prophets (ch 13)"},
+    {l:1,t:"Idolatrous Elders (ch 14)"},
+    {l:1,t:"Jerusalem the Useless Vine (ch 15)"},
+    {l:1,t:"Jerusalem's Infidelity (ch 16)"},
+    {l:1,t:"Parable of the Two Eagles (ch 17)"},
+    {l:1,t:"Soul That Sins Shall Die (ch 18)"},
+    {l:1,t:"Lamentation for the Princes (ch 19)"},
+    {l:1,t:"Israel's History of Rebellion (ch 20)"},
+    {l:1,t:"Sword of the Lord (ch 21)"},
+    {l:1,t:"Sins of Jerusalem (ch 22)"},
+    {l:1,t:"Two Sisters: Samaria and Jerusalem (ch 23)"},
+    {l:1,t:"The Boiling Pot (ch 24)"},
+    {l:0,t:"Prophecies Against Foreign Nations (ch 25–32)"},
+    {l:1,t:"Against Ammon, Moab, Edom, Philistia (ch 25)"},
+    {l:1,t:"Against Tyre (ch 26–28)"},
+    {l:1,t:"Against Egypt (ch 29–32)"},
+    {l:0,t:"Restoration of Israel (ch 33–39)"},
+    {l:1,t:"Watchman and Responsibility (ch 33)"},
+    {l:1,t:"Prophecy Against Edom (ch 35)"},
+    {l:1,t:"Restoration of the Land (ch 36)"},
+    {l:1,t:"Valley of Dry Bones (ch 37)"},
+    {l:1,t:"Invasion of Gog (ch 38–39)"},
+    {l:0,t:"Vision of the New Temple and Land (ch 40–48)"},
+    {l:1,t:"The New Temple (ch 40–42)"},
+    {l:1,t:"God's Glory Returning (ch 43)"},
+    {l:1,t:"Regulations for the Temple (ch 44–46)"},
+    {l:1,t:"The New Land Division (ch 47–48)"}
+  ],
+  "Daniel": [
+    {l:0,t:"Daniel and His Companions in Exile (ch 1)"},
+    {l:0,t:"Nebuchadnezzar's Dream of the Image (ch 2)"},
+    {l:0,t:"The Fiery Furnace (ch 3)"},
+    {l:0,t:"Nebuchadnezzar's Dream of the Tree (ch 4)"},
+    {l:0,t:"The Writing on the Wall (ch 5)"},
+    {l:0,t:"Daniel in the Lion's Den (ch 6)"},
+    {l:0,t:"Vision of the Four Beasts (ch 7)"},
+    {l:0,t:"Vision of the Ram and Goat (ch 8)"},
+    {l:0,t:"Gabriel's Explanation (ch 9)"},
+    {l:0,t:"The Great Conflict (ch 10–12)"},
+    {l:1,t:"Daniel's Vision by the River (ch 10)"},
+    {l:1,t:"Prophecy of Kings and Kingdoms (ch 11)"},
+    {l:1,t:"The End Times and Resurrection (ch 12)"}
+  ],
+  "Hosea": [
+    {l:0,t:"The Unfaithful Wife (ch 1–3)"},
+    {l:1,t:"Hosea's Marriage (ch 1)"},
+    {l:1,t:"Judgment and Restoration (ch 2)"},
+    {l:1,t:"Hosea's Redemption of Gomer (ch 3)"},
+    {l:0,t:"The Lord's Case Against Israel (ch 4–7)"},
+    {l:0,t:"Israel's Corruption and Punishment (ch 8–10)"},
+    {l:0,t:"God's Love for Israel (ch 11)"},
+    {l:0,t:"Israel's Apostasy and Repentance (ch 12–14)"}
+  ],
+  "Joel": [
+    {l:0,t:"The Day of the Locust (ch 1)"},
+    {l:0,t:"Call to Repentance (ch 2:1–11)"},
+    {l:0,t:"The Day of the Lord (ch 2:12–32)"},
+    {l:0,t:"Judgment Against the Nations (ch 3)"}
+  ],
+  "Amos": [
+    {l:0,t:"Prophecies Against Foreign Nations (ch 1–2)"},
+    {l:0,t:"Sins of Israel (ch 2:4–6:14)"},
+    {l:1,t:"Israel's Rebellion (ch 2:4–16)"},
+    {l:1,t:"Condemnation of Israel (ch 3)"},
+    {l:1,t:"Failure of Warnings (ch 4)"},
+    {l:1,t:"Call to Repentance (ch 5)"},
+    {l:1,t:"Woe to the Complacent (ch 6)"},
+    {l:0,t:"Visions of Judgment (ch 7–9)"},
+    {l:1,t:"First Two Visions (ch 7:1–9)"},
+    {l:1,t:"Encounter with Amaziah (ch 7:10–17)"},
+    {l:1,t:"Vision of Ripe Fruit (ch 8)"},
+    {l:1,t:"Vision of the Threshold (ch 9:1–10)"},
+    {l:1,t:"Restoration of David's Tent (ch 9:11–15)"}
+  ],
+  "Obadiah": [
+    {l:0,t:"Pride and Fall of Edom (1–9)"},
+    {l:0,t:"Judgment for Violence Against Jacob (10–14)"},
+    {l:0,t:"The Day of the Lord (15–21)"}
+  ],
+  "Jonah": [
+    {l:0,t:"Jonah Flees from the Lord (ch 1)"},
+    {l:0,t:"Prayer from the Fish's Belly (ch 2)"},
+    {l:0,t:"Jonah Preaches to Nineveh (ch 3)"},
+    {l:0,t:"Jonah's Anger and God's Mercy (ch 4)"}
+  ],
+  "Micah": [
+    {l:0,t:"Judgment on Israel and Judah (ch 1–3)"},
+    {l:1,t:"The Coming Judgment (ch 1)"},
+    {l:1,t:"Oppression of the Poor (ch 2)"},
+    {l:1,t:"Judgment on Rulers and Prophets (ch 3)"},
+    {l:0,t:"Mountain of the Lord (ch 4–5)"},
+    {l:1,t:"Exaltation of Zion (ch 4)"},
+    {l:1,t:"Birth of the Messiah (ch 5)"},
+    {l:0,t:"God's Case Against Israel (ch 6–7)"},
+    {l:1,t:"The Lord's Case (ch 6)"},
+    {l:1,t:"Lament and Hope (ch 7)"}
+  ],
+  "Nahum": [
+    {l:0,t:"God's Jealousy and Vengeance (ch 1)"},
+    {l:0,t:"Fall of Nineveh Predicted (ch 2)"},
+    {l:0,t:"Fall of Nineveh Depicted (ch 3)"}
+  ],
+  "Habakkuk": [
+    {l:0,t:"First Complaint: Violence in Judah (1:1–4)"},
+    {l:0,t:"God's Answer: Babylon Will Punish (1:5–11)"},
+    {l:0,t:"Second Complaint: Innocence Punished (1:12–2:1)"},
+    {l:0,t:"God's Answer: The Righteous Live by Faith (2:2–20)"},
+    {l:0,t:"Habakkuk's Prayer (ch 3)"}
+  ],
+  "Zephaniah": [
+    {l:0,t:"The Day of the Lord's Judgment (ch 1)"},
+    {l:0,t:"Call to Repentance (ch 2)"},
+    {l:0,t:"Restoration and Blessing (ch 3)"}
+  ],
+  "Haggai": [
+    {l:0,t:"A Call to Rebuild the Temple (1:1–15)"},
+    {l:0,t:"The Promise of God's Presence (ch 2)"}
+  ],
+  "Zechariah": [
+    {l:0,t:"Call to Return to God (ch 1)"},
+    {l:0,t:"Eight Night Visions (ch 1–6)"},
+    {l:1,t:"Visions of Comfort (ch 1–2)"},
+    {l:1,t:"Visions Concerning Nations and Temple (ch 3–6)"},
+    {l:0,t:"Question About Fasting (ch 7)"},
+    {l:0,t:"Judgment and Salvation (ch 8)"},
+    {l:0,t:"Burden: The Messiah King (ch 9–11)"},
+    {l:1,t:"The Coming King (ch 9)"},
+    {l:1,t:"Restoration and Rejection (ch 10–11)"},
+    {l:0,t:"Burden: The Day of the Lord (ch 12–14)"},
+    {l:1,t:"Jerusalem's Defense (ch 12)"},
+    {l:1,t:"Cleansing and Restoration (ch 13)"},
+    {l:1,t:"The Lord's Universal Reign (ch 14)"}
+  ],
+  "Malachi": [
+    {l:0,t:"God's Love and Israel's Ingratitude (1:1–5)"},
+    {l:0,t:"Blemished Sacrifices (1:6–14)"},
+    {l:0,t:"Corruption of the Priesthood (2:1–9)"},
+    {l:0,t:"Unfaithfulness in Marriage (2:10–16)"},
+    {l:0,t:"The Messenger and Day of Judgment (2:17–3:6)"},
+    {l:0,t:"Robbery of Tithes (3:7–12)"},
+    {l:0,t:"Complaints Answered (3:13–4:6)"}
+  ],
+  "Matthew": [
+    {l:0,t:"Birth and Infancy of Jesus (1:1–2:23)"},
+    {l:1,t:"Genealogy of Jesus (ch 1)"},
+    {l:1,t:"Birth and Escape to Egypt (ch 2)"},
+    {l:0,t:"Ministry of John the Baptist (3:1–12)"},
+    {l:0,t:"Baptism and Temptation of Jesus (3:13–4:11)"},
+    {l:0,t:"Beginning of Jesus' Ministry (4:12–25)"},
+    {l:0,t:"The Sermon on the Mount (ch 5–7)"},
+    {l:1,t:"The Beatitudes (ch 5)"},
+    {l:1,t:"Teachings on the Law (ch 5)"},
+    {l:1,t:"Teachings on Prayer, Fasting, and Forgiveness (ch 6)"},
+    {l:1,t:"Teachings on Judging and Perseverance (ch 7)"},
+    {l:0,t:"Miracles and Authority (ch 8–9)"},
+    {l:1,t:"Healing and Compassion (ch 8)"},
+    {l:1,t:"Calling of Matthew and More Miracles (ch 9)"},
+    {l:0,t:"The Mission of the Twelve (ch 10)"},
+    {l:0,t:"Opposition and Clarification (ch 11–12)"},
+    {l:0,t:"Parables of the Kingdom (ch 13)"},
+    {l:0,t:"News of John's Death and Feeding (ch 14)"},
+    {l:0,t:"Peter's Declaration and Prediction of Death (ch 16)"},
+    {l:0,t:"Transfiguration and Teachings (ch 17)"},
+    {l:0,t:"Humility and Community (ch 18)"},
+    {l:0,t:"The Journey to Jerusalem (ch 19–20)"},
+    {l:0,t:"Events in Jerusalem (ch 21–25)"},
+    {l:1,t:"Triumphal Entry and Cleansing Temple (ch 21)"},
+    {l:1,t:"Questions and Parables (ch 22–23)"},
+    {l:1,t:"Olivet Discourse (ch 24)"},
+    {l:1,t:"Parable of the Talents (ch 25)"},
+    {l:0,t:"Passion and Resurrection (ch 26–28)"},
+    {l:1,t:"Conspiracy and Last Supper (ch 26)"},
+    {l:1,t:"Arrest, Trial, Crucifixion (ch 26–27)"},
+    {l:1,t:"Resurrection and Great Commission (ch 28)"}
+  ],
+  "Mark": [
+    {l:0,t:"Baptism and Temptation (1:1–13)"},
+    {l:0,t:"Early Ministry in Galilee (1:14–3:6)"},
+    {l:1,t:"Calling of Disciples (1:14–20)"},
+    {l:1,t:"Healing and Authority (1:21–45)"},
+    {l:1,t:"Healing on the Sabbath (ch 2–3)"},
+    {l:0,t:"Choosing the Twelve (3:7–19)"},
+    {l:0,t:"Parables and Opposition (3:20–6:6)"},
+    {l:1,t:"Jesus' Family and Parables (3:20–4:34)"},
+    {l:1,t:"Miracles and Rejection (ch 5–6)"},
+    {l:0,t:"Apostolic Mission (6:7–30)"},
+    {l:0,t:"Feeding and Walking on Water (6:31–52)"},
+    {l:0,t:"Healing and Traditions (6:53–7:23)"},
+    {l:0,t:"Healing and Feeding (7:24–8:10)"},
+    {l:0,t:"The Leaven and Blindness (8:11–26)"},
+    {l:0,t:"Peter's Declaration (8:27–38)"},
+    {l:0,t:"Transfiguration (ch 9)"},
+    {l:0,t:"Teachings on Greatness and Stumbling (ch 9)"},
+    {l:0,t:"Journey to Jerusalem (10:1–52)"},
+    {l:0,t:"Events in Jerusalem (11:1–13:37)"},
+    {l:1,t:"Triumphal Entry (ch 11)"},
+    {l:1,t:"Temple Cleansing and Cursing Fig Tree (ch 11)"},
+    {l:1,t:"Questions and Teachings (ch 12)"},
+    {l:1,t:"Olivet Discourse (ch 13)"},
+    {l:0,t:"Passion Narrative (14:1–15:47)"},
+    {l:1,t:"Last Supper (ch 14)"},
+    {l:1,t:"Arrest and Trial (ch 14)"},
+    {l:1,t:"Crucifixion and Burial (ch 15)"},
+    {l:0,t:"Resurrection (ch 16)"}
+  ],
+  "Luke": [
+    {l:0,t:"Preface (1:1–4)"},
+    {l:0,t:"Birth Narratives (1:5–2:52)"},
+    {l:1,t:"Birth of John the Baptist (ch 1)"},
+    {l:1,t:"Birth of Jesus (ch 2)"},
+    {l:0,t:"Preparation for Ministry (3:1–4:13)"},
+    {l:1,t:"John's Ministry and Jesus' Baptism (ch 3)"},
+    {l:1,t:"Genealogy and Temptation (ch 3–4)"},
+    {l:0,t:"Ministry in Galilee (4:14–9:50)"},
+    {l:1,t:"Rejection at Nazareth (4:14–30)"},
+    {l:1,t:"Healing and Teaching (4:31–6:49)"},
+    {l:1,t:"The Sermon on the Plain (ch 6)"},
+    {l:1,t:"Healing and Calling (ch 7–9)"},
+    {l:0,t:"Journey to Jerusalem (9:51–18:30)"},
+    {l:1,t:"Teachings on Following Jesus (9:51–10:42)"},
+    {l:1,t:"Teachings on Prayer and Anxiety (11:1–12:59)"},
+    {l:1,t:"Parables and Warnings (ch 13–15)"},
+    {l:1,t:"Teachings on Wealth and Faith (ch 16–17)"},
+    {l:1,t:"Healing and Humility (ch 18)"},
+    {l:0,t:"Ministry in Jerusalem (18:31–21:38)"},
+    {l:1,t:"Triumphal Entry and Temple (ch 19)"},
+    {l:1,t:"Teachings and Questions (ch 20)"},
+    {l:1,t:"Olivet Discourse (ch 21)"},
+    {l:0,t:"Passion and Resurrection (ch 22–24)"},
+    {l:1,t:"Last Supper (ch 22)"},
+    {l:1,t:"Arrest and Trial (ch 22–23)"},
+    {l:1,t:"Crucifixion (ch 23)"},
+    {l:1,t:"Resurrection and Appearances (ch 24)"}
+  ],
+  "John": [
+    {l:0,t:"Prologue: The Word (1:1–18)"},
+    {l:0,t:"John's Testimony to Jesus (1:19–51)"},
+    {l:0,t:"Jesus' Signs and Rejection (ch 2–5)"},
+    {l:1,t:"Water Turned to Wine (ch 2)"},
+    {l:1,t:"Cleansing the Temple (ch 2)"},
+    {l:1,t:"Nicodemus and New Birth (ch 3)"},
+    {l:1,t:"Woman at the Well (ch 4)"},
+    {l:1,t:"Healing at Bethesda (ch 5)"},
+    {l:0,t:"Bread of Life Discourse (ch 6)"},
+    {l:0,t:"Festivals and Teachings (ch 7–8)"},
+    {l:0,t:"Light of the World and Sin (ch 9)"},
+    {l:0,t:"The Good Shepherd (ch 10)"},
+    {l:0,t:"Resurrection and Life (ch 11)"},
+    {l:0,t:"Jesus' Final Days (ch 12)"},
+    {l:0,t:"Jesus Washes the Disciples' Feet (ch 13)"},
+    {l:0,t:"Comfort and Promise to Disciples (ch 14–16)"},
+    {l:1,t:"Jesus the Way (ch 14)"},
+    {l:1,t:"Jesus the Vine (ch 15)"},
+    {l:1,t:"Work of the Holy Spirit (ch 16)"},
+    {l:0,t:"Jesus' Prayer (ch 17)"},
+    {l:0,t:"Arrest and Trial (ch 18)"},
+    {l:0,t:"Crucifixion and Resurrection (ch 19–20)"},
+    {l:0,t:"Appearance at the Lake (ch 21)"}
+  ],
+  "Acts": [
+    {l:0,t:"Jesus' Ascension and Prayer (1:1–26)"},
+    {l:0,t:"Pentecost and Peter's Sermon (ch 2)"},
+    {l:0,t:"Healing and Opposition (ch 3–4)"},
+    {l:0,t:"Persecution and Lying (ch 5)"},
+    {l:0,t:"Choosing Deacons (ch 6)"},
+    {l:0,t:"Stephen's Testimony and Martyrdom (ch 7)"},
+    {l:0,t:"Persecution of the Church (ch 8)"},
+    {l:0,t:"Saul's Conversion (ch 9)"},
+    {l:0,t:"Peter's Vision and Cornelius (ch 10–11)"},
+    {l:0,t:"Persecution and James' Death (ch 12)"},
+    {l:0,t:"Paul's First Missionary Journey (ch 13–14)"},
+    {l:0,t:"The Jerusalem Council (ch 15)"},
+    {l:0,t:"Paul's Second Missionary Journey (ch 15–18)"},
+    {l:1,t:"Separation and Disagreement (15:36–40)"},
+    {l:1,t:"Timothy Joins Paul (ch 16)"},
+    {l:1,t:"Ministry at Thessalonica, Berea, Athens (ch 17)"},
+    {l:1,t:"Corinth and Return (ch 18)"},
+    {l:0,t:"Paul's Third Missionary Journey (ch 18–21)"},
+    {l:1,t:"Ephesus (ch 19)"},
+    {l:1,t:"Return to Jerusalem (ch 20)"},
+    {l:0,t:"Paul's Arrest and Defense (ch 22–26)"},
+    {l:0,t:"Journey to Rome (ch 27)"},
+    {l:0,t:"Paul in Rome (ch 28)"}
+  ],
+  "Romans": [
+    {l:0,t:"Greeting and Thanksgiving (1:1–15)"},
+    {l:0,t:"Gospel Righteousness (1:16–17)"},
+    {l:0,t:"Condemnation: All Have Sinned (1:18–3:20)"},
+    {l:1,t:"God's Wrath Against Ungodliness (1:18–32)"},
+    {l:1,t:"Judgment of All People (ch 2)"},
+    {l:1,t:"Faithfulness and Unfaithfulness (ch 3)"},
+    {l:0,t:"Justification by Faith (3:21–5:21)"},
+    {l:1,t:"Righteousness Revealed (3:21–31)"},
+    {l:1,t:"Abraham as an Example (ch 4)"},
+    {l:1,t:"Peace and Rejoicing in Hope (ch 5)"},
+    {l:0,t:"Union with Christ in Death and Life (ch 6)"},
+    {l:0,t:"Freedom from the Law (ch 7)"},
+    {l:0,t:"Life in the Spirit (ch 8)"},
+    {l:0,t:"Israel's Past, Present, and Future (ch 9–11)"},
+    {l:1,t:"Sovereignty and Selection (ch 9)"},
+    {l:1,t:"Righteousness Attained and Not Attained (ch 10)"},
+    {l:1,t:"Restoration of Israel (ch 11)"},
+    {l:0,t:"Christian Living and Community (ch 12–16)"},
+    {l:1,t:"Sacrifice and Service (ch 12)"},
+    {l:1,t:"Governmental Authority (ch 13)"},
+    {l:1,t:"Weak and Strong (ch 14–15)"},
+    {l:1,t:"Greetings and Closing (ch 16)"}
+  ],
+  "1 Corinthians": [
+    {l:0,t:"Greeting and Thanksgiving (1:1–9)"},
+    {l:0,t:"Divisions in the Church (1:10–4:21)"},
+    {l:1,t:"Factions and Foolishness of the Cross (1:10–2:5)"},
+    {l:1,t:"God's Wisdom and Human Wisdom (2:6–3:4)"},
+    {l:1,t:"God's Workmen (3:5–4:5)"},
+    {l:1,t:"Apostolic Authority (4:6–21)"},
+    {l:0,t:"Moral Disorders (ch 5–6)"},
+    {l:1,t:"Immorality in the Church (ch 5)"},
+    {l:1,t:"Lawsuits and Immorality (ch 6)"},
+    {l:0,t:"Marriage and Singleness (ch 7)"},
+    {l:0,t:"Food Offered to Idols (ch 8)"},
+    {l:0,t:"Paul's Apostolic Rights (ch 9)"},
+    {l:0,t:"Warnings from Israel's History (10:1–13)"},
+    {l:0,t:"Idolatry and Conscience (10:14–11:1)"},
+    {l:0,t:"Worship and the Roles of Men and Women (ch 11)"},
+    {l:0,t:"Spiritual Gifts (ch 12–14)"},
+    {l:1,t:"Varieties of Gifts (ch 12)"},
+    {l:1,t:"Love, the Greatest Gift (ch 13)"},
+    {l:1,t:"Prophecy and Tongues (ch 14)"},
+    {l:0,t:"Resurrection of the Dead (ch 15)"},
+    {l:1,t:"The Gospel and Resurrection (15:1–34)"},
+    {l:1,t:"Glorified Bodies (15:35–58)"},
+    {l:0,t:"Collection and Closing (ch 16)"}
+  ],
+  "2 Corinthians": [
+    {l:0,t:"Greeting and Comfort in Affliction (1:1–11)"},
+    {l:0,t:"Paul's Change of Plans (1:12–2:13)"},
+    {l:0,t:"Triumph in Christ (2:14–17)"},
+    {l:0,t:"Ministry of the New Covenant (ch 3)"},
+    {l:0,t:"Treasure in Earthen Vessels (ch 4)"},
+    {l:0,t:"Heavenly Dwelling (ch 5)"},
+    {l:0,t:"Marks of the Ministry (ch 6)"},
+    {l:0,t:"Paul's Appeal for Reconciliation (ch 7)"},
+    {l:0,t:"Generosity in Giving (ch 8–9)"},
+    {l:1,t:"Example of the Macedonians (ch 8)"},
+    {l:1,t:"Principles of Giving (ch 9)"},
+    {l:0,t:"Paul's Authority (ch 10–13)"},
+    {l:1,t:"Spiritual Weapons (10:1–11:15)"},
+    {l:1,t:"Paul's Sufferings and Weakness (11:16–13:13)"}
+  ],
+  "Galatians": [
+    {l:0,t:"Greeting and Rebuke (1:1–10)"},
+    {l:0,t:"Paul's Apostolic Authority (1:11–2:14)"},
+    {l:1,t:"Gospel Received by Revelation (1:11–24)"},
+    {l:1,t:"Approval of the Apostles (2:1–10)"},
+    {l:1,t:"Correction of Peter (2:11–14)"},
+    {l:0,t:"Faith Versus Law (2:15–3:18)"},
+    {l:0,t:"Function of the Law (3:19–25)"},
+    {l:0,t:"Children of God Through Faith (3:26–4:7)"},
+    {l:0,t:"Return to Bondage (4:8–20)"},
+    {l:0,t:"Allegory of Hagar and Sarah (4:21–31)"},
+    {l:0,t:"Freedom in Christ (ch 5)"},
+    {l:0,t:"Fruits of the Spirit (5:22–26)"},
+    {l:0,t:"Bearing One Another's Burdens (ch 6)"},
+    {l:0,t:"Closing Exhortation (6:11–18)"}
+  ],
+  "Ephesians": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Blessings in Christ (1:3–14)"},
+    {l:0,t:"Prayer for Spiritual Enlightenment (1:15–23)"},
+    {l:0,t:"Redemption Through Christ (ch 2)"},
+    {l:1,t:"Salvation by Grace Through Faith (2:1–10)"},
+    {l:1,t:"Breaking Down the Barriers (2:11–22)"},
+    {l:0,t:"Mystery of Christ Revealed (ch 3)"},
+    {l:0,t:"Prayer for Spiritual Strength (3:14–21)"},
+    {l:0,t:"Unity of the Body (ch 4)"},
+    {l:0,t:"Christian Conduct (ch 5–6)"},
+    {l:1,t:"Imitators of God (5:1–20)"},
+    {l:1,t:"Household Relationships (5:21–6:9)"},
+    {l:1,t:"Spiritual Warfare (6:10–20)"},
+    {l:0,t:"Closing (6:21–24)"}
+  ],
+  "Philippians": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Thanksgiving for Partnership (1:3–11)"},
+    {l:0,t:"Paul's Circumstances (1:12–30)"},
+    {l:0,t:"Imitating Christ's Humility (2:1–11)"},
+    {l:0,t:"Living as Lights (2:12–18)"},
+    {l:0,t:"Timothy and Epaphroditus (2:19–30)"},
+    {l:0,t:"Warning Against False Teachers (ch 3)"},
+    {l:1,t:"Righteousness Through Faith (3:1–9)"},
+    {l:1,t:"Pressing Toward the Goal (3:10–21)"},
+    {l:0,t:"Exhortations to Unity and Joy (ch 4)"},
+    {l:0,t:"Closing (4:21–23)"}
+  ],
+  "Colossians": [
+    {l:0,t:"Greeting and Thanksgiving (1:1–8)"},
+    {l:0,t:"Prayer and Proclamation (1:9–23)"},
+    {l:0,t:"Paul's Struggle (1:24–2:5)"},
+    {l:0,t:"Warning Against False Philosophy (2:6–23)"},
+    {l:0,t:"Seek the Things Above (ch 3)"},
+    {l:0,t:"Christian Household (3:18–4:1)"},
+    {l:0,t:"Prayer and Conduct (4:2–6)"},
+    {l:0,t:"Final Greetings (4:7–18)"}
+  ],
+  "1 Thessalonians": [
+    {l:0,t:"Greeting (1:1)"},
+    {l:0,t:"Thanksgiving and Encouragement (1:2–3:13)"},
+    {l:1,t:"Gospel Reception and Living (1:2–10)"},
+    {l:1,t:"Paul's Ministry (2:1–16)"},
+    {l:1,t:"Desire to See Them Again (2:17–3:13)"},
+    {l:0,t:"Christian Living (4:1–12)"},
+    {l:0,t:"Concerning the Dead (4:13–18)"},
+    {l:0,t:"Day of the Lord (5:1–11)"},
+    {l:0,t:"Final Instructions (5:12–28)"}
+  ],
+  "2 Thessalonians": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Thanksgiving and Encouragement (1:3–12)"},
+    {l:0,t:"The Man of Lawlessness (ch 2)"},
+    {l:0,t:"Prayer for Strength (2:16–17)"},
+    {l:0,t:"Prayer for Faithfulness (ch 3)"},
+    {l:0,t:"Closing (3:16–18)"}
+  ],
+  "1 Timothy": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Warning About False Teachers (1:3–20)"},
+    {l:0,t:"Instructions on Prayer (ch 2)"},
+    {l:0,t:"Qualifications for Leaders (ch 3)"},
+    {l:0,t:"False Asceticism and Godliness (ch 4)"},
+    {l:0,t:"Widows, Elders, and Servants (ch 5)"},
+    {l:0,t:"Servants and the Love of Money (ch 6)"},
+    {l:0,t:"Final Charge (6:17–21)"}
+  ],
+  "2 Timothy": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Exhortation to Faithfulness (1:3–18)"},
+    {l:0,t:"Endurance in the Faith (ch 2)"},
+    {l:0,t:"Difficult Times and Scripture (ch 3)"},
+    {l:0,t:"Final Charge (4:1–8)"},
+    {l:0,t:"Personal Remarks and Closing (4:9–22)"}
+  ],
+  "Titus": [
+    {l:0,t:"Greeting (1:1–4)"},
+    {l:0,t:"Qualifications of Elders (1:5–16)"},
+    {l:0,t:"Teaching the Sound Doctrine (ch 2)"},
+    {l:0,t:"Remind People (3:1–11)"},
+    {l:0,t:"Final Remarks (3:12–15)"}
+  ],
+  "Philemon": [
+    {l:0,t:"Greeting (1–3)"},
+    {l:0,t:"Thanksgiving and Prayer (4–7)"},
+    {l:0,t:"Request for Onesimus (8–21)"},
+    {l:0,t:"Closing (22–25)"}
+  ],
+  "Hebrews": [
+    {l:0,t:"God's Final Word Through the Son (1:1–4)"},
+    {l:0,t:"The Son Superior to Angels (1:5–2:18)"},
+    {l:0,t:"Jesus Greater Than Moses (3:1–4:13)"},
+    {l:0,t:"Jesus Our High Priest (4:14–5:10)"},
+    {l:0,t:"Call to Maturity (5:11–6:20)"},
+    {l:0,t:"Melchizedek and Jesus' Priesthood (ch 7)"},
+    {l:0,t:"Jesus and the New Covenant (ch 8)"},
+    {l:0,t:"Earthly Sanctuary (ch 9)"},
+    {l:0,t:"One Perfect Sacrifice (10:1–18)"},
+    {l:0,t:"Faith and Endurance (10:19–12:29)"},
+    {l:1,t:"Hold Fast Your Confession (10:19–39)"},
+    {l:1,t:"Definition of Faith (11:1–40)"},
+    {l:1,t:"Running the Race (12:1–13)"},
+    {l:1,t:"Warning and God's Discipline (12:14–29)"},
+    {l:0,t:"Final Exhortations (ch 13)"}
+  ],
+  "James": [
+    {l:0,t:"Greeting (1:1)"},
+    {l:0,t:"Trials and Temptations (1:2–18)"},
+    {l:0,t:"Hearing and Doing (1:19–27)"},
+    {l:0,t:"Favoritism Forbidden (ch 2)"},
+    {l:0,t:"Faith and Works (2:14–26)"},
+    {l:0,t:"Controlling the Tongue (ch 3)"},
+    {l:0,t:"Causes of Quarrels (4:1–12)"},
+    {l:0,t:"Boasting About Tomorrow (4:13–17)"},
+    {l:0,t:"Judgment Against the Rich (5:1–6)"},
+    {l:0,t:"Patience and Prayer (5:7–20)"}
+  ],
+  "1 Peter": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Living Hope (1:3–12)"},
+    {l:0,t:"Holiness (1:13–25)"},
+    {l:0,t:"Building on Christ (2:1–10)"},
+    {l:0,t:"Submission and Service (2:11–3:7)"},
+    {l:0,t:"Suffering for Rightness (3:8–22)"},
+    {l:0,t:"Christian Living (4:1–11)"},
+    {l:0,t:"Suffering as a Christian (4:12–19)"},
+    {l:0,t:"Shepherding God's Flock (5:1–4)"},
+    {l:0,t:"Closing Exhortations (5:5–14)"}
+  ],
+  "2 Peter": [
+    {l:0,t:"Greeting (1:1–2)"},
+    {l:0,t:"Grow in Grace (1:3–11)"},
+    {l:0,t:"Eyewitness of Christ (1:12–18)"},
+    {l:0,t:"Prophecy and Scripture (1:19–21)"},
+    {l:0,t:"False Prophets (ch 2)"},
+    {l:0,t:"The Day of the Lord (ch 3)"},
+    {l:0,t:"Closing (3:17–18)"}
+  ],
+  "1 John": [
+    {l:0,t:"Proclamation of Life (1:1–4)"},
+    {l:0,t:"God is Light (1:5–2:29)"},
+    {l:1,t:"Walking in Light (1:5–10)"},
+    {l:1,t:"Jesus Our Advocate (2:1–14)"},
+    {l:1,t:"Warning About the World (2:15–29)"},
+    {l:0,t:"God is Love (3:1–4:21)"},
+    {l:1,t:"Children of God (3:1–10)"},
+    {l:1,t:"Love One Another (3:11–24)"},
+    {l:1,t:"Test the Spirits (4:1–6)"},
+    {l:1,t:"God's Love and Our Love (4:7–21)"},
+    {l:0,t:"Victory Through Faith (5:1–21)"},
+    {l:1,t:"Overcoming the World (5:1–12)"},
+    {l:1,t:"Assurance and Prayer (5:13–21)"}
+  ],
+  "2 John": [
+    {l:0,t:"Greeting (1–3)"},
+    {l:0,t:"Love and Truth (4–6)"},
+    {l:0,t:"Warning Against Deceivers (7–11)"},
+    {l:0,t:"Closing (12–13)"}
+  ],
+  "3 John": [
+    {l:0,t:"Greeting (1–4)"},
+    {l:0,t:"Gaius's Hospitality (5–8)"},
+    {l:0,t:"Diotrephes and Demetrius (9–12)"},
+    {l:0,t:"Closing (13–14)"}
+  ],
+  "Jude": [
+    {l:0,t:"Greeting (1–2)"},
+    {l:0,t:"Contending for the Faith (3–4)"},
+    {l:0,t:"Examples of Judgment (5–7)"},
+    {l:0,t:"Condemnation of False Teachers (8–16)"},
+    {l:0,t:"Exhortations and Benediction (17–25)"}
+  ],
+  "Revelation": [
+    {l:0,t:"Prologue (1:1–3)"},
+    {l:0,t:"Letters to the Seven Churches (1:4–3:22)"},
+    {l:1,t:"Vision of the Risen Jesus (ch 1)"},
+    {l:1,t:"Messages to the Churches (ch 2–3)"},
+    {l:0,t:"The Heavenly Throne (ch 4–5)"},
+    {l:0,t:"The Seven Seals (ch 6–8:1)"},
+    {l:0,t:"The Seven Trumpets (ch 8–11)"},
+    {l:0,t:"The Woman and the Dragon (ch 12)"},
+    {l:0,t:"The Two Beasts (ch 13)"},
+    {l:0,t:"The Lamb and His Followers (ch 14)"},
+    {l:0,t:"The Seven Bowls (ch 15–16)"},
+    {l:0,t:"The Fall of Babylon (ch 17–18)"},
+    {l:0,t:"Christ's Return and Victory (ch 19)"},
+    {l:0,t:"The Millennium and Final Judgment (ch 20)"},
+    {l:0,t:"New Heaven and Earth (ch 21)"},
+    {l:0,t:"The New Jerusalem (21:9–27)"},
+    {l:0,t:"The River of Life (ch 22)"},
+    {l:0,t:"Epilogue (22:16–21)"}
+  ]
+};
+
+
+
+// ============================================================
+// UTILITIES
+// ============================================================
+
+function getBookData(name) { return BOOKS.find(b => b.name === name); }
+
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+
+function getAvailableBooks(section, specificBook) {
+  if (section === "OT") return BOOKS.filter(b => b.t === "OT");
+  if (section === "NT") return BOOKS.filter(b => b.t === "NT");
+  if (section === "book") return BOOKS.filter(b => b.name === specificBook);
+  if (section === "all") return BOOKS;
+  return BOOKS.filter(b => b.g === section);
+}
+
+function countAvailableChapters(section, specificBook) {
+  return getAvailableBooks(section, specificBook).reduce((sum, b) => sum + b.ch, 0);
+}
+
+function generateRandomPassages(section, specificBook, count) {
+  const books = getAvailableBooks(section, specificBook);
+  if (books.length === 0) return [];
+  // Build list of every chapter in the selected section
+  const allChapters = [];
+  books.forEach(b => { for (let c = 1; c <= b.ch; c++) allChapters.push({b:b.name, c}); });
+  // Shuffle and pick the requested count (no duplicate chapters)
+  return shuffle(allChapters).slice(0, Math.min(count, allChapters.length));
+}
+
+async function fetchChapterSegment(bookName, chapter, translation) {
+  const ref = `${bookName} ${chapter}`;
+  const url = `https://bible-api.com/${encodeURIComponent(ref)}?translation=${translation}`;
+  const res = await fetch(url);
+  if (!res.ok) throw new Error(`API error: ${res.status}`);
+  const data = await res.json();
+  const verses = data.verses || [];
+  if (verses.length === 0) throw new Error("No verses found");
+  // Pick a random segment of 4-10 verses (or whole chapter if short)
+  let segLen, startIdx;
+  if (verses.length <= 8) { startIdx = 0; segLen = verses.length; }
+  else { segLen = 4 + Math.floor(Math.random() * 7); segLen = Math.min(segLen, verses.length); const maxStart = verses.length - segLen; startIdx = Math.floor(Math.random() * (maxStart + 1)); }
+  const segment = verses.slice(startIdx, startIdx + segLen);
+  return { verses: segment, s: segment[0].verse, e: segment[segment.length - 1].verse };
+}
+
+function loadStats() {
+  try {
+    return JSON.parse(localStorage.getItem('bq_stats')) || {total:0,correct:0,streak:0,best:0};
+  } catch { return {total:0,correct:0,streak:0,best:0}; }
+}
+function saveStats(s) { try { localStorage.setItem('bq_stats',JSON.stringify(s)); } catch {} }
+function loadSetting(k,d) { try { return localStorage.getItem('bq_'+k)||d; } catch { return d; } }
+function saveSetting(k,v) { try { localStorage.setItem('bq_'+k,v); } catch {} }
+
+// ============================================================
+// COMPONENTS
+// ============================================================
+
+function App() {
+  const [screen, setScreen] = useState("home");
+  const [quizConfig, setQuizConfig] = useState(null);
+  const [quizState, setQuizState] = useState(null);
+  const [stats, setStats] = useState(loadStats);
+  const [translation, setTranslation] = useState(() => loadSetting('translation','web'));
+
+  const startQuiz = (config) => {
+    const passages = generateRandomPassages(config.section, config.specificBook, config.count);
+    if (passages.length === 0) { alert("No chapters available for this selection."); return; }
+    setQuizConfig(config);
+    setQuizState({ passages, current:0, answers:[], score:0 });
+    setScreen("quiz");
+  };
+
+  const submitAnswer = (book, chapter, verseRange) => {
+    const passage = quizState.passages[quizState.current];
+    // Detect single-book mode
+    const isSingleBookMode = quizConfig.section === "book";
+    let correct, bookCorrect, close;
+    if (isSingleBookMode) {
+      // Single-book grading: only chapter matters
+      correct = chapter === passage.c;
+      close = !correct && Math.abs(chapter - passage.c) === 1;
+      bookCorrect = true; // always true in single-book mode
+    } else {
+      // Normal grading: book + chapter
+      correct = book === passage.b && chapter === passage.c;
+      close = false;
+      bookCorrect = book === passage.b;
+    }
+    const fullPassage = {...passage, s:verseRange.s, e:verseRange.e};
+    const newAnswers = [...quizState.answers, {passage:fullPassage, book, chapter, correct, bookCorrect, close, isSingleBookMode}];
+    const newScore = quizState.score + (correct ? 1 : 0);
+    const newStats = {...stats, total: stats.total + 1};
+    if (correct) {
+      newStats.correct = stats.correct + 1;
+      newStats.streak = stats.streak + 1;
+      newStats.best = Math.max(newStats.best, newStats.streak);
+    } else {
+      newStats.streak = 0;
+    }
+    setStats(newStats);
+    saveStats(newStats);
+    setQuizState({...quizState, answers:newAnswers, score:newScore});
+    setScreen("result");
+  };
+
+  const nextQuestion = () => {
+    const next = quizState.current + 1;
+    if (next >= quizState.passages.length) { setScreen("summary"); }
+    else { setQuizState({...quizState, current:next}); setScreen("quiz"); }
+  };
+
+  const goHome = () => { setScreen("home"); setQuizState(null); setQuizConfig(null); };
+
+  const changeTranslation = (t) => { setTranslation(t); saveSetting('translation',t); };
+
+  const [studyBook, setStudyBook] = useState(null);
+
+  switch(screen) {
+    case "home": return <HomeScreen stats={stats} onStart={()=>setScreen("setup")} onStudy={()=>setScreen("study")} onSettings={()=>setScreen("settings")} />;
+    case "setup": return <SetupScreen onBack={goHome} onStart={startQuiz} />;
+    case "study": return <StudyScreen onBack={goHome} onSelectBook={(name)=>{setStudyBook(name);setScreen("outline");}} />;
+    case "outline": return <OutlineScreen bookName={studyBook} onBack={()=>setScreen("study")} />;
+    case "quiz": return <QuizScreen state={quizState} quizConfig={quizConfig} translation={translation} onAnswer={submitAnswer} onQuit={goHome} />;
+    case "result": return <ResultScreen state={quizState} onNext={nextQuestion} />;
+    case "summary": return <SummaryScreen state={quizState} onHome={goHome} onRestart={()=>setScreen("setup")} />;
+    case "settings": return <SettingsScreen translation={translation} onChange={changeTranslation} onBack={goHome} stats={stats} setStats={setStats} />;
+    default: return null;
+  }
+}
+
+function HomeScreen({stats, onStart, onStudy, onSettings}) {
+  return (
+    <div className="screen">
+      <div className="hero">
+        <div className="hero-icon">
+          <svg width="56" height="56" viewBox="0 0 56 56" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect x="8" y="4" width="36" height="48" rx="3" stroke="#8b9a7e" strokeWidth="2.5" fill="none"/>
+            <path d="M8 10 C8 10 12 8 16 8 L16 46 C12 46 8 48 8 48" stroke="#8b9a7e" strokeWidth="2.5" fill="none"/>
+            <line x1="22" y1="16" x2="36" y2="16" stroke="#8b9a7e" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="22" y1="22" x2="36" y2="22" stroke="#e0ddd7" strokeWidth="2" strokeLinecap="round"/>
+            <line x1="22" y1="28" x2="32" y2="28" stroke="#e0ddd7" strokeWidth="2" strokeLinecap="round"/>
+            <path d="M28 34 L28 44 M24 38 L32 38" stroke="#8b9a7e" strokeWidth="2" strokeLinecap="round"/>
+          </svg>
+        </div>
+        <h1>Scripture Spotter</h1>
+        <p>Test your knowledge of where passages are located in the Bible</p>
+      </div>
+      <div className="stats-row">
+        <div className="stat-card">
+          <div className="val">{stats.total}</div>
+          <div className="lbl">Questions</div>
+        </div>
+        <div className="stat-card">
+          <div className="val">{stats.total > 0 ? Math.round(stats.correct/stats.total*100) : 0}%</div>
+          <div className="lbl">Accuracy</div>
+        </div>
+        <div className="stat-card">
+          <div className="val">{stats.best}</div>
+          <div className="lbl">Best Streak</div>
+        </div>
+      </div>
+      <button className="btn btn-primary" onClick={onStart} style={{marginBottom:12}}>Start Quiz</button>
+      <button className="btn btn-secondary" onClick={onStudy} style={{marginBottom:12}}>Study Outlines</button>
+      <button className="btn btn-secondary" onClick={onSettings}>Settings</button>
+    </div>
+  );
+}
+
+function SetupScreen({onBack, onStart}) {
+  const [section, setSection] = useState("all");
+  const [specificBook, setSpecificBook] = useState(null);
+  const [count, setCount] = useState(10);
+  const [showBookPicker, setShowBookPicker] = useState(false);
+
+  const sectionOptions = [
+    {id:"all",label:"Whole Bible"},{id:"OT",label:"Old Testament"},{id:"NT",label:"New Testament"}
+  ];
+  const groupOptions = [
+    {id:"Pentateuch",label:"Pentateuch"},{id:"Historical",label:"Historical"},
+    {id:"Poetry & Wisdom",label:"Poetry & Wisdom"},{id:"Prophets",label:"Major Prophets"},
+    {id:"Minor Prophets",label:"Minor Prophets"},
+    {id:"Gospels",label:"Gospels"},{id:"Acts",label:"Acts"},
+    {id:"Paul's Letters",label:"Paul's Letters"},{id:"General Letters",label:"General Letters"},
+    {id:"Revelation",label:"Revelation"}
+  ];
+  const countOptions = [5,10,15,20];
+
+  const handleBookSelect = (name) => { setSpecificBook(name); setSection("book"); setShowBookPicker(false); };
+  const available = countAvailableChapters(section, specificBook);
+
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}>&larr; Back</button>
+      <h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Quiz Setup</h2>
+
+      <div className="section-group">
+        <div className="section-group-title">Section</div>
+        <div className="option-grid cols-3">
+          {sectionOptions.map(o => (
+            <button key={o.id} className={`option-btn${section===o.id?' selected':''}`}
+              onClick={()=>{setSection(o.id);setSpecificBook(null);}}>{o.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="section-group">
+        <div className="section-group-title">By Category</div>
+        <div className="option-grid cols-2">
+          {groupOptions.map(o => (
+            <button key={o.id} className={`option-btn small${section===o.id?' selected':''}`}
+              onClick={()=>{setSection(o.id);setSpecificBook(null);}}>{o.label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="section-group">
+        <div className="section-group-title">Specific Book</div>
+        <button className={`option-btn${section==='book'?' selected':''}`} style={{width:'100%',textAlign:'left'}}
+          onClick={()=>setShowBookPicker(true)}>
+          {section==='book'&&specificBook ? specificBook : 'Choose a book...'}
+        </button>
+      </div>
+
+      <div className="section-group">
+        <div className="section-group-title">Number of Questions</div>
+        <div className="option-grid cols-4" style={{gridTemplateColumns:'repeat(4,1fr)'}}>
+          {countOptions.map(n => (
+            <button key={n} className={`option-btn${count===n?' selected':''}`}
+              onClick={()=>setCount(n)}>{n}</button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{color:'var(--dim)',fontSize:13,textAlign:'center',marginBottom:12}}>
+        {available} chapter{available!==1?'s':''} available
+      </div>
+
+      <button className="btn btn-primary" disabled={available===0}
+        onClick={()=>onStart({section,specificBook,count})}>
+        {available===0 ? 'No chapters available' : `Start (${Math.min(count,available)} questions)`}
+      </button>
+
+      {showBookPicker && <BookPickerModal onSelect={handleBookSelect} onClose={()=>setShowBookPicker(false)} />}
+    </div>
+  );
+}
+
+function QuizScreen({state, quizConfig, translation, onAnswer, onQuit}) {
+  const [passageData, setPassageData] = useState(null);
+  const [verseRange, setVerseRange] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedChapter, setSelectedChapter] = useState(null);
+  const [showBookPicker, setShowBookPicker] = useState(false);
+
+  // If only one book is possible, pre-select it and skip the book picker
+  const availableBooks = getAvailableBooks(quizConfig.section, quizConfig.specificBook);
+  const uniqueBookNames = [...new Set(availableBooks.map(b => b.name))];
+  const isSingleBook = uniqueBookNames.length === 1;
+  const [selectedBook, setSelectedBook] = useState(isSingleBook ? uniqueBookNames[0] : null);
+
+  const passage = state.passages[state.current];
+  const progress = ((state.current) / state.passages.length) * 100;
+
+  const doFetch = () => {
+    setLoading(true); setError(null); setPassageData(null); setVerseRange(null);
+    setSelectedChapter(null);
+    if (!isSingleBook) setSelectedBook(null);
+    fetchChapterSegment(passage.b, passage.c, translation)
+      .then(data => { setPassageData(data); setVerseRange({s:data.s, e:data.e}); setLoading(false); })
+      .catch(err => { setError(err.message); setLoading(false); });
+  };
+
+  useEffect(() => { doFetch(); }, [passage, translation]);
+
+  const bookData = selectedBook ? BOOKS.find(b=>b.name===selectedBook) : null;
+
+  const handleBookSelect = (name) => {
+    setSelectedBook(name); setSelectedChapter(null); setShowBookPicker(false);
+  };
+
+  if (loading) return (
+    <div className="screen">
+      <div className="loader"><div className="spinner"></div><div className="load-text">Loading passage...</div></div>
+    </div>
+  );
+
+  if (error) return (
+    <div className="screen">
+      <div className="error-card">
+        <p>Failed to load passage: {error}</p>
+        <button className="btn btn-secondary" style={{display:'inline-block',width:'auto',padding:'10px 24px'}}
+          onClick={doFetch}>
+          Retry
+        </button>
+      </div>
+      <button className="btn btn-outline" onClick={onQuit}>Quit Quiz</button>
+    </div>
+  );
+
+  return (
+    <div className="screen">
+      <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',marginBottom:8}}>
+        <span style={{fontSize:14,color:'var(--muted)'}}>Question {state.current+1} of {state.passages.length}</span>
+        <button style={{fontSize:13,color:'var(--dim)',background:'none'}} onClick={onQuit}>Quit</button>
+      </div>
+      <div className="progress-bar"><div className="progress-fill" style={{width:progress+'%'}}></div></div>
+
+      <div className="passage-card">
+        <div style={{fontSize:12,color:'var(--dim)',marginBottom:8,fontWeight:600,textTransform:'uppercase',letterSpacing:1}}>Where is this passage from?</div>
+        <div className="passage-text">
+          {passageData.verses.map(v => (
+            <span key={v.verse}><span className="verse-num">{v.verse}</span>{v.text} </span>
+          ))}
+        </div>
+      </div>
+
+      <div style={{marginBottom:12}}>
+        {isSingleBook ? (
+          <div>
+            <div style={{fontSize:12,color:'var(--dim)',fontWeight:600,marginBottom:6,textTransform:'uppercase',letterSpacing:1}}>
+              Which chapter of {selectedBook}?
+            </div>
+            <div className="chapter-grid">
+              {Array.from({length:bookData.ch},(_, i)=>i+1).map(n=>(
+                <button key={n} className={`ch-btn${selectedChapter===n?' selected':''}`}
+                  onClick={()=>setSelectedChapter(n)}>{n}</button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div>
+            <div style={{fontSize:12,color:'var(--dim)',fontWeight:600,marginBottom:6,textTransform:'uppercase',letterSpacing:1}}>Your Answer</div>
+            <button className="option-btn" style={{width:'100%',textAlign:'left',marginBottom:8}}
+              onClick={()=>setShowBookPicker(true)}>
+              {selectedBook || 'Select a book...'}
+            </button>
+
+            {bookData && (
+              <div>
+                <div style={{fontSize:12,color:'var(--dim)',fontWeight:600,marginBottom:6,marginTop:4,textTransform:'uppercase',letterSpacing:1}}>
+                  Chapter {selectedChapter ? `(${selectedChapter})` : ''}
+                </div>
+                <div className="chapter-grid">
+                  {Array.from({length:bookData.ch},(_, i)=>i+1).map(n=>(
+                    <button key={n} className={`ch-btn${selectedChapter===n?' selected':''}`}
+                      onClick={()=>setSelectedChapter(n)}>{n}</button>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <button className="btn btn-primary" disabled={!selectedBook||!selectedChapter}
+        onClick={()=>onAnswer(selectedBook,selectedChapter,verseRange)}>
+        {isSingleBook ? 'Submit' : 'Submit Answer'}
+      </button>
+
+      {showBookPicker && <BookPickerModal onSelect={handleBookSelect} onClose={()=>setShowBookPicker(false)} filterSection={quizConfig} />}
+    </div>
+  );
+}
+
+function ResultScreen({state, onNext}) {
+  const answer = state.answers[state.answers.length - 1];
+  const {passage, book, chapter, correct, bookCorrect, close, isSingleBookMode} = answer;
+  const isLast = state.current + 1 >= state.passages.length;
+
+  // Determine icon, text, subtitle
+  let icon, textColor, label, subtitle;
+  if (correct) {
+    icon = '\u2705'; textColor = 'var(--green)'; label = 'Correct!'; subtitle = 'You nailed it!';
+  } else if (isSingleBookMode && close) {
+    icon = '\uD83D\uDFE1'; textColor = 'var(--accent)'; label = 'Close!';
+    subtitle = `Off by 1 chapter (it was chapter ${passage.c})`;
+  } else if (!isSingleBookMode && bookCorrect) {
+    icon = '\uD83D\uDFE1'; textColor = 'var(--accent)'; label = 'Close!'; subtitle = 'Right book, wrong chapter';
+  } else {
+    icon = '\u274C'; textColor = 'var(--red)'; label = 'Incorrect'; subtitle = 'Keep studying!';
+  }
+
+  return (
+    <div className="screen">
+      <div className="pop">
+        <div className="result-icon">{icon}</div>
+        <div className="result-text" style={{color: textColor}}>{label}</div>
+        <div className="result-sub">{subtitle}</div>
+      </div>
+
+      <div className="result-detail">
+        <div className="result-row">
+          <span className="result-label">Correct Answer</span>
+          <span className="result-value" style={{color:'var(--green)'}}>
+            {isSingleBookMode ? `Chapter ${passage.c} (${passage.s}-${passage.e})` : `${passage.b} ${passage.c}:${passage.s}-${passage.e}`}
+          </span>
+        </div>
+        <div className="result-row">
+          <span className="result-label">Your Answer</span>
+          <span className="result-value" style={{color:correct?'var(--green)':close?'var(--accent)':'var(--red)'}}>
+            {isSingleBookMode ? `Chapter ${chapter}` : `${book} ${chapter}`}
+          </span>
+        </div>
+        <div className="result-row">
+          <span className="result-label">Score So Far</span>
+          <span className="result-value">{state.score} / {state.answers.length}</span>
+        </div>
+      </div>
+
+      <button className="btn btn-primary" onClick={onNext}>
+        {isLast ? 'See Results' : 'Next Question'}
+      </button>
+    </div>
+  );
+}
+
+function SummaryScreen({state, onHome, onRestart}) {
+  const pct = state.passages.length > 0 ? Math.round(state.score / state.passages.length * 100) : 0;
+  const isSingleBookMode = state.answers.length > 0 && state.answers[0].isSingleBookMode;
+  const closeCount = state.answers.filter(a => a.close).length;
+  const bookOnly = isSingleBookMode ? closeCount : state.answers.filter(a => a.bookCorrect && !a.correct).length;
+  const missed = state.passages.length - state.score - bookOnly;
+
+  let message = "";
+  if (pct === 100) message = "Perfect score! Amazing!";
+  else if (pct >= 80) message = "Excellent work!";
+  else if (pct >= 60) message = "Good job! Keep it up!";
+  else if (pct >= 40) message = "Not bad! Room to grow.";
+  else message = "Keep studying! You'll improve.";
+
+  return (
+    <div className="screen">
+      <h2 style={{fontSize:22,fontWeight:700,textAlign:'center',marginTop:20}}>Quiz Complete</h2>
+      <div className="summary-score">
+        <span className="big">{state.score}</span>
+        <span className="of">of</span>
+        <span className="big">{state.passages.length}</span>
+      </div>
+      <div style={{textAlign:'center',color:'var(--muted)',marginBottom:24,fontSize:15}}>{message}</div>
+
+      <div className="card">
+        <div className="summary-stat">
+          <span style={{color:'var(--muted)'}}>Accuracy</span>
+          <span style={{fontWeight:700,color:'var(--accent)'}}>{pct}%</span>
+        </div>
+        <div className="summary-stat">
+          <span style={{color:'var(--muted)'}}>{isSingleBookMode ? 'Correct chapter' : 'Exact (book + chapter)'}</span>
+          <span style={{fontWeight:700,color:'var(--green)'}}>{state.score}</span>
+        </div>
+        <div className="summary-stat">
+          <span style={{color:'var(--muted)'}}>{isSingleBookMode ? 'Off by 1 chapter' : 'Right book, wrong chapter'}</span>
+          <span style={{fontWeight:700,color:'var(--accent)'}}>{bookOnly}</span>
+        </div>
+        <div className="summary-stat">
+          <span style={{color:'var(--muted)'}}>Missed</span>
+          <span style={{fontWeight:700,color:'var(--red)'}}>{missed}</span>
+        </div>
+      </div>
+
+      <h3 style={{fontSize:15,fontWeight:600,color:'var(--muted)',marginTop:16,marginBottom:12}}>Review</h3>
+      {state.answers.map((a, i) => {
+        const icon = a.correct ? '\u2705' : a.close ? '\uD83D\uDFE1' : (a.bookCorrect && !a.isSingleBookMode) ? '\uD83D\uDFE1' : '\u274C';
+        return (
+          <div key={i} className="card" style={{padding:12,display:'flex',gap:10,alignItems:'center'}}>
+            <span style={{fontSize:20}}>{icon}</span>
+            <div style={{flex:1,minWidth:0}}>
+              <div style={{fontSize:13,fontWeight:600,color:a.correct?'var(--green)':'var(--text)'}}>
+                {a.isSingleBookMode ? `Chapter ${a.passage.c}:${a.passage.s}-${a.passage.e}` : `${a.passage.b} ${a.passage.c}:${a.passage.s}-${a.passage.e}`}
+              </div>
+              {!a.correct && <div style={{fontSize:12,color:'var(--dim)'}}>
+                You said: {a.isSingleBookMode ? `Chapter ${a.chapter}` : `${a.book} ${a.chapter}`}
+                {a.close && ' (close!)'}
+              </div>}
+            </div>
+          </div>
+        );
+      })}
+
+      <div style={{display:'flex',gap:8,marginTop:20,paddingBottom:20}}>
+        <button className="btn btn-secondary" style={{flex:1}} onClick={onHome}>Home</button>
+        <button className="btn btn-primary" style={{flex:1}} onClick={onRestart}>New Quiz</button>
+      </div>
+    </div>
+  );
+}
+
+function SettingsScreen({translation, onChange, onBack, stats, setStats}) {
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}>&larr; Back</button>
+      <h2 style={{fontSize:22,fontWeight:700,marginBottom:20}}>Settings</h2>
+
+      <div className="card">
+        <div className="setting-item">
+          <div>
+            <div className="setting-label">Translation</div>
+            <div className="setting-desc">Choose your preferred Bible translation</div>
+          </div>
+          <select value={translation} onChange={e=>onChange(e.target.value)}>
+            {TRANSLATIONS.map(t=><option key={t.id} value={t.id}>{t.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      <div className="card" style={{marginTop:8}}>
+        <h3 style={{fontSize:15,fontWeight:600,marginBottom:12}}>Statistics</h3>
+        <div className="setting-item">
+          <span className="setting-label">Total Questions</span>
+          <span style={{fontWeight:600}}>{stats.total}</span>
+        </div>
+        <div className="setting-item">
+          <span className="setting-label">Correct Answers</span>
+          <span style={{fontWeight:600,color:'var(--green)'}}>{stats.correct}</span>
+        </div>
+        <div className="setting-item">
+          <span className="setting-label">Accuracy</span>
+          <span style={{fontWeight:600}}>{stats.total>0?Math.round(stats.correct/stats.total*100):0}%</span>
+        </div>
+        <div className="setting-item">
+          <span className="setting-label">Current Streak</span>
+          <span style={{fontWeight:600,color:'var(--accent)'}}>{stats.streak}</span>
+        </div>
+        <div className="setting-item">
+          <span className="setting-label">Best Streak</span>
+          <span style={{fontWeight:600,color:'var(--accent)'}}>{stats.best}</span>
+        </div>
+      </div>
+
+      <button className="btn btn-outline" style={{marginTop:16,color:'var(--red)',borderColor:'rgba(196,92,92,0.25)'}}
+        onClick={()=>{if(confirm('Reset all stats?')){const s={total:0,correct:0,streak:0,best:0};setStats(s);saveStats(s);}}}>
+        Reset Statistics
+      </button>
+
+      <div style={{marginTop:24,textAlign:'center',color:'var(--dim)',fontSize:12}}>
+        <p>Bible text provided by bible-api.com</p>
+        <p style={{marginTop:4}}>All 1,189 chapters available</p>
+      </div>
+    </div>
+  );
+}
+
+function StudyScreen({onBack, onSelectBook}) {
+  const [search, setSearch] = useState("");
+
+  const filtered = search.trim()
+    ? BOOKS.filter(b => b.name.toLowerCase().includes(search.toLowerCase()))
+    : BOOKS;
+
+  const grouped = {};
+  filtered.forEach(b => { if (!grouped[b.g]) grouped[b.g]=[]; grouped[b.g].push(b); });
+
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}>&larr; Back</button>
+      <h2 style={{fontSize:22,fontWeight:700,marginBottom:4}}>Study Outlines</h2>
+      <p style={{color:'var(--muted)',fontSize:14,marginBottom:16}}>Review the structure and content of each book</p>
+
+      <div style={{marginBottom:16}}>
+        <input type="text" placeholder="Search books..." value={search}
+          onChange={e=>setSearch(e.target.value)}
+          style={{width:'100%',padding:'12px 16px',background:'var(--card)',border:'1px solid var(--card-border)',borderRadius:10,color:'var(--text)',fontSize:15,outline:'none',fontFamily:'inherit'}} />
+      </div>
+
+      <div style={{flex:1,overflowY:'auto',WebkitOverflowScrolling:'touch',paddingBottom:20}}>
+        {ALL_GROUPS.filter(g=>grouped[g]).map(g=>(
+          <div key={g}>
+            <div className="book-group-title">{g}</div>
+            {grouped[g].map(b=>(
+              <button key={b.name} className="study-book-btn" onClick={()=>onSelectBook(b.name)}>
+                <span>{b.name}</span>
+                <span className="ch-count">{b.ch} chapters</span>
+              </button>
+            ))}
+          </div>
+        ))}
+        {filtered.length===0 && <div style={{textAlign:'center',color:'var(--dim)',padding:20}}>No books found</div>}
+      </div>
+    </div>
+  );
+}
+
+function OutlineScreen({bookName, onBack}) {
+  const bookData = BOOKS.find(b => b.name === bookName);
+  const outline = OUTLINES[bookName] || [];
+
+  return (
+    <div className="screen">
+      <button className="back-btn" onClick={onBack}>&larr; All Books</button>
+      <h2 style={{fontSize:22,fontWeight:700,marginBottom:4}}>{bookName}</h2>
+      <p style={{color:'var(--muted)',fontSize:13,marginBottom:16}}>
+        {bookData ? `${bookData.ch} chapters \u00B7 ${bookData.t === "OT" ? "Old Testament" : "New Testament"} \u00B7 ${bookData.g}` : ''}
+      </p>
+
+      <div style={{flex:1,overflowY:'auto',WebkitOverflowScrolling:'touch',paddingBottom:20}}>
+        {outline.length > 0 ? (
+          <div className="card" style={{padding:'12px 16px'}}>
+            {outline.map((item, i) => (
+              <div key={i} className={`outline-item outline-l${item.l}`}>
+                {item.t}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div style={{textAlign:'center',color:'var(--dim)',padding:40}}>
+            No outline available for this book yet.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function BookPickerModal({onSelect, onClose, filterSection}) {
+  const [search, setSearch] = useState("");
+  const inputRef = useRef(null);
+
+  useEffect(()=>{ setTimeout(()=>inputRef.current?.focus(),100); },[]);
+
+  // Filter books based on quiz section
+  let availableBooks = BOOKS;
+  if (filterSection) {
+    const sec = filterSection.section;
+    if (sec === "OT") availableBooks = BOOKS.filter(b => b.t === "OT");
+    else if (sec === "NT") availableBooks = BOOKS.filter(b => b.t === "NT");
+    else if (sec === "book" && filterSection.specificBook) availableBooks = BOOKS.filter(b => b.name === filterSection.specificBook);
+    else if (sec !== "all") availableBooks = BOOKS.filter(b => b.g === sec);
+  }
+
+  const filtered = search.trim()
+    ? availableBooks.filter(b => b.name.toLowerCase().includes(search.toLowerCase()))
+    : availableBooks;
+
+  const grouped = {};
+  filtered.forEach(b => { if (!grouped[b.g]) grouped[b.g]=[]; grouped[b.g].push(b); });
+
+  return (
+    <div className="modal-overlay" onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
+      <div className="modal">
+        <div className="modal-header">
+          <h2>Select a Book</h2>
+          <button className="modal-close" onClick={onClose}>&times;</button>
+        </div>
+        <div className="modal-search">
+          <input ref={inputRef} type="text" placeholder="Search books..." value={search}
+            onChange={e=>setSearch(e.target.value)} />
+        </div>
+        <div className="modal-body">
+          {ALL_GROUPS.filter(g=>grouped[g]).map(g=>(
+            <div key={g}>
+              <div className="book-group-title">{g}</div>
+              {grouped[g].map(b=>(
+                <button key={b.name} className="book-btn" onClick={()=>onSelect(b.name)}>
+                  {b.name} <span style={{color:'var(--dim)',fontSize:12,float:'right'}}>{b.ch} ch</span>
+                </button>
+              ))}
+            </div>
+          ))}
+          {filtered.length===0 && <div style={{textAlign:'center',color:'var(--dim)',padding:20}}>No books found</div>}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ============================================================
+// RENDER
+// ============================================================
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
